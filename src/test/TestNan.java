@@ -17,6 +17,8 @@ public class TestNan {
 		t1.Print(t2);
 		t2.Print(t2);
 		
+		int aa=10;
+		System.out.println((double)aa/3);
 		//(TestPrivateClass)((Object)t1).
 	}
 	

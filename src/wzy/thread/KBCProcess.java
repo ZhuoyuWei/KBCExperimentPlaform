@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import wzy.io.FileTools;
 import wzy.model.*;
 
-public class KBCProcess {
+public class KBCProcess implements Callable{
+
 
 
 	private int[][] train_triplets;
@@ -152,8 +154,9 @@ public class KBCProcess {
 			System.exit(-1);
 		}
 		em.InitEmbeddingsRandomly();
+		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
 		em.Training(train_triplets, validate_triplets);
-		em.Testing(em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets), test_triplets);
+		em.Testing(test_triplets);
 	}
 	
 	public int[][] getTrain_triplets() {
@@ -173,5 +176,18 @@ public class KBCProcess {
 	}
 	public void setTest_triplets(int[][] test_triplets) {
 		this.test_triplets = test_triplets;
+	}
+	public EmbeddingModel getEm() {
+		return em;
+	}
+	public void setEm(EmbeddingModel em) {
+		this.em = em;
+	}
+	
+	@Override
+	public Object call() throws Exception {
+		// TODO Auto-generated method stub
+		Processing();
+		return null;
 	}
 }

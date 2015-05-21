@@ -28,5 +28,8 @@ public class TripletHash {
 	public void setTriplet(int[] triplet) {
 		this.triplet = triplet;
 	}
+	public int[] getTriplet() {
+		return triplet;
+	}
 	
 }

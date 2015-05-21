@@ -12,40 +12,39 @@ import wzy.meta.TripletHash;
  * It is a base class for embedding-based models, i.e., TransE.
  * Any embedding-based model can inherit this class, and overwrite its functions, specifically.
  * However, there are several functions are empty and must to be overwrote:
- * void InitEmbeddingsRandomly();
- * double CalculateSimilarity(int[] triplet);
- * void CalculateGradient(int[] triplet,List<Object> gradientList);
- * List<Object> ListingEmbedding();
+ * 		void InitEmbeddingsRandomly();
+ * 		double CalculateSimilarity(int[] triplet);
+ * 		void CalculateGradient(int[] triplet,List<Object> gradientList);
+ * 		List<Object> ListingEmbedding();
+ *      List<Object> ListingGradient();
+ * 		void PreTesting(int[][] test_triplets);
+ * 		void InitGradients();
  * @author Zhuoyu Wei
  * @version 1.0
  */
 public class EmbeddingModel {
 
-	//private double[][] entity_embedding
+	//protected double[][] entity_embedding
 	
-	private boolean L1regular=false;
-	private boolean project=true;
-	private boolean trainprintable=true;	
-	private Random rand=new Random();	
+	protected boolean L1regular=false;
+	protected boolean project=true;
+	protected boolean trainprintable=true;	
+	protected Random rand=new Random();	
 	
-	private int Epoch=500;
-	private int minibranchsize=4800;
-	private double gamma=0.1;
-	private double margin=1.;
-	private int random_data_each_epoch=0;
+	protected int Epoch=500;
+	protected int minibranchsize=4800;
+	protected double gamma=0.1;
+	protected double margin=1.;
+	protected int random_data_each_epoch=0;
+	protected boolean bern=true;
+	protected Set<TripletHash> filteringSet; 
 	
-	//for debug
-	private List<Double> pointerr_buffer_list;
-	private List<Double> pairerr_buffer_list;
+	protected double lammadaL1=0.;
+	protected double lammadaL2=0.;
 	
-	private double lammadaL1=0.;
-	private double lammadaL2=0.;
-	
-
-	
-
-	private int entityNum;
-	private int relationNum;
+	protected int entityNum;
+	protected int relationNum;
+	protected int[][] relation_entity_counts;
 	
 	/**
 	 * Need to be overwrote
@@ -56,6 +55,27 @@ public class EmbeddingModel {
 	 */
 	public void InitEmbeddingsRandomly()
 	{}
+	
+	public void CountEntityForRelation(int[][] train_triplets)
+	{
+		relation_entity_counts=new int[relationNum][2];
+		Set<Integer>[][] entitySets=new Set[relationNum][2];
+		for(int i=0;i<relationNum;i++)
+		{
+			entitySets[i][0]=new HashSet<Integer>();
+			entitySets[i][0]=new HashSet<Integer>();
+		}
+		for(int i=0;i<train_triplets.length;i++)
+		{
+			entitySets[train_triplets[i][1]][0].add(train_triplets[i][0]);
+			entitySets[train_triplets[i][1]][1].add(train_triplets[i][2]);
+		}
+		for(int i=0;i<relationNum;i++)
+		{
+			relation_entity_counts[i][0]=entitySets[i][0].size();
+			relation_entity_counts[i][1]=entitySets[i][1].size();
+		}
+	}
 	
 	/**
 	 * Need to be overwrote
@@ -82,7 +102,7 @@ public class EmbeddingModel {
 	 * and they need cast the objects to embeddings in this method by themselves.
 	 * @need Override
 	 */
-	private void CalculateGradient(int[] triplet,List<Object> gradientList)
+	protected void CalculateGradient(int[] triplet,List<Object> gradientList)
 	{}
 	
 	/**
@@ -90,7 +110,7 @@ public class EmbeddingModel {
 	 * @param embeddingList 
 	 * @param gradientList
 	 */
-	private void UpgradeGradients(List<Object> embeddingList,List<Object> gradientList)
+	protected void UpgradeGradients(List<Object> embeddingList,List<Object> gradientList)
 	{
 		for(int i=0;i<embeddingList.size();i++)
 		{
@@ -112,21 +132,21 @@ public class EmbeddingModel {
 			}
 		}
 	}
-	private void UpgradeGradients(double[] embedding,double[] gradient)
+	protected void UpgradeGradients(double[] embedding,double[] gradient)
 	{
 		for(int i=0;i<embedding.length;i++)
 		{
 			embedding[i]+=gamma*gradient[i]*(-1);
 		}
 	}
-	private void UpgradeGradients(double[][] embedding,double[][] gradient)
+	protected void UpgradeGradients(double[][] embedding,double[][] gradient)
 	{
 		for(int i=0;i<embedding.length;i++)
 		{
 			UpgradeGradients(embedding[i],gradient[i]);
 		}
 	}	
-	private void UpgradeGradients(double[][][] embedding,double[][][] gradient)
+	protected void UpgradeGradients(double[][][] embedding,double[][][] gradient)
 	{
 		for(int i=0;i<embedding.length;i++)
 		{
@@ -141,7 +161,7 @@ public class EmbeddingModel {
 	 * @param index
 	 * @need Override
 	 */
-	private void UpgradeGradients(List<Object> embeddingList,List<Object> gradientList,int index)
+	protected void UpgradeGradients(List<Object> embeddingList,List<Object> gradientList,int index)
 	{}
 	
 
@@ -149,7 +169,7 @@ public class EmbeddingModel {
 	 * After changing any parameter vector when training,it need 
 	 * @param embeddingList
 	 */
-	private void BallProjecting(List<Object> embeddingList)
+	protected void BallProjecting(List<Object> embeddingList)
 	{
 		for(int i=0;i<embeddingList.size();i++)
 		{
@@ -171,21 +191,21 @@ public class EmbeddingModel {
 
 		}
 	}
-	private void L1BallProjecting(double[][] embeddings)
+	protected void L1BallProjecting(double[][] embeddings)
 	{
 		for(int i=0;i<embeddings.length;i++)
 		{
 			L1BallProjecting(embeddings[i]);
 		}
 	}
-	private void L2BallProjecting(double[][] embeddings)
+	protected void L2BallProjecting(double[][] embeddings)
 	{
 		for(int i=0;i<embeddings.length;i++)
 		{
 			L2BallProjecting(embeddings[i]);
 		}
 	}	
-	private void L1BallProjecting(double[] embeddings)
+	protected void L1BallProjecting(double[] embeddings)
 	{
 		double x=0.;
 		for(int i=0;i<embeddings.length;i++)
@@ -201,7 +221,7 @@ public class EmbeddingModel {
 			}
 		}
 	}
-	private void L2BallProjecting(double[] embeddings)
+	protected void L2BallProjecting(double[] embeddings)
 	{
 		double x=0.;
 		for(int i=0;i<embeddings.length;i++)
@@ -226,7 +246,7 @@ public class EmbeddingModel {
 	 * @return
 	 * @need Override
 	 */
-	private List<Object> ListingEmbedding()
+	protected List<Object> ListingEmbedding()
 	{
 		return new ArrayList<Object>();
 	}
@@ -236,7 +256,7 @@ public class EmbeddingModel {
 	 * @return
 	 * @need Override
 	 */
-	private List<Object> ListingGradient()
+	protected List<Object> ListingGradient()
 	{
 		return new ArrayList<Object>();		
 	}
@@ -250,7 +270,7 @@ public class EmbeddingModel {
 	 * @param sindex
 	 * @param eindex
 	 */
-	private void OneBranchTraining(int[][] train_triplets,int sindex,int eindex)
+	protected void OneBranchTraining(int[][] train_triplets,int sindex,int eindex)
 	{
 		List<Object> embeddingList=ListingEmbedding();
 		List<Object> gradientList=ListingGradient();
@@ -264,19 +284,19 @@ public class EmbeddingModel {
 			BallProjecting(embeddingList);
 	}
 	
-	private boolean DiscriminateTripletMinium(double score)
+	protected boolean DiscriminateTripletMinium(double score)
 	{
 		return score<margin;
 	}
-	private boolean DiscriminateTripletMinium(double score,double falsescore)
+	protected boolean DiscriminateTripletMinium(double score,double falsescore)
 	{
 		return score+margin<falsescore;
 	}	
-	private boolean DiscriminateTripletMaxium(double score)
+	protected boolean DiscriminateTripletMaxium(double score)
 	{
 		return score>margin;
 	}
-	private boolean DiscriminateTripletMaxium(double score,double falsescore)
+	protected boolean DiscriminateTripletMaxium(double score,double falsescore)
 	{
 		return score-margin>falsescore;
 	}		
@@ -287,7 +307,7 @@ public class EmbeddingModel {
 	 * @param triplet
 	 * @return 
 	 */
-	private double CalculatePointError(int[] triplet)
+	protected double CalculatePointError(int[] triplet)
 	{
 		return CalculateSimilarity(triplet);
 		//return DiscriminateTripletMinium(similarity)?(similarity-1):0;	
@@ -298,7 +318,7 @@ public class EmbeddingModel {
 	 * @param triplet
 	 * @return 
 	 */
-	private double CalculatePairError(int[] triplet)
+	protected double CalculatePairError(int[] triplet)
 	{
 		int[][] falsetriplets=new int[2][3];
 		for(int i=0;i<2;i++)
@@ -330,19 +350,19 @@ public class EmbeddingModel {
 	
 	
 
+	/**
+	 * Need to be overwrote
+	 * When train via a branch, we need initialize gradients for all parameters.
+	 * @need Override
+	 */
+	protected void InitGradients()
+	{}
 	
 	public void Training(int[][] train_triplets,int[][] validate_triplets)
 	{
 		int branch=train_triplets.length/minibranchsize;
 		if(train_triplets.length%minibranchsize>0)
 			branch++;
-		if(trainprintable)
-		{
-			pointerr_buffer_list=new ArrayList<Double>();
-			pointerr_buffer_list.add(Double.MAX_VALUE);
-			pairerr_buffer_list=new ArrayList<Double>();
-			pairerr_buffer_list.add(Double.MAX_VALUE);
-		}
 		double lasttrain_point_err=Double.MIN_VALUE;
 		double lasttrain_pair_err=Double.MAX_VALUE;				
 		double lastvalid_point_err=Double.MAX_VALUE;
@@ -366,6 +386,7 @@ public class EmbeddingModel {
 				int eindex=(i+1)*minibranchsize-1;
 				if(eindex>=train_triplets.length)
 					eindex=train_triplets.length-1;
+				InitGradients();
 				OneBranchTraining(train_triplets,sindex,eindex);	
 			}
 			long end=System.currentTimeMillis();
@@ -392,8 +413,8 @@ public class EmbeddingModel {
 				train_pair_err/=train_triplets.length;
 				valid_point_err/=validate_triplets.length;
 				valid_pair_err/=validate_triplets.length;
-				System.out.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s");
-				System.out.println("\t"+train_point_err+"\t"+train_pair_err+
+				System.err.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s");
+				System.err.println("\t"+train_point_err+"\t"+train_pair_err+
 						"\t"+valid_point_err+"\t"+valid_pair_err+
 						"\t"+(lasttrain_point_err-train_point_err)+"\t"+(lasttrain_pair_err-train_pair_err)+
 						"\t"+(lastvalid_point_err-valid_point_err)+"\t"+(lastvalid_pair_err-valid_pair_err));
@@ -413,7 +434,7 @@ public class EmbeddingModel {
 	 * In this function, you can change your embeddings, weights, even test triplets.
 	 * @need Override
 	 */
-	private void PreTesting(int[][] test_triplets)
+	protected void PreTesting(int[][] test_triplets)
 	{}
 	
 	
@@ -421,9 +442,18 @@ public class EmbeddingModel {
 	/**
 	 * 
 	 */
-	public void Testing(Set<TripletHash> filteringSet,int[][] test_triplets)
+	public void Testing(int[][] test_triplets)
 	{
 		PreTesting(test_triplets);
+		int raw_hit10l=0;
+		int raw_meanl=0;
+		int filter_hit10l=0;
+		int filter_meanl=0;
+		int raw_hit10r=0;
+		int raw_meanr=0;
+		int filter_hit10r=0;
+		int filter_meanr=0;	
+		long start=System.currentTimeMillis();
 		for(int i=0;i<test_triplets.length;i++)
 		{
 			int[] falsetriplet;
@@ -432,11 +462,11 @@ public class EmbeddingModel {
 			double score=CalculateSimilarity(test_triplets[i]);
 			//left testing
 			falsetriplet=copyints(test_triplets[i]);
-			rawcount=0;
-			filtercount=0;
+			rawcount=1;
+			filtercount=1;
 			for(int j=0;j<entityNum;j++)
 			{
-				if(j==test_triplets[i][0])
+				if(j==test_triplets[i][2])
 					continue;
 				falsetriplet[2]=j;
 				double tscore=CalculateSimilarity(falsetriplet);
@@ -449,21 +479,73 @@ public class EmbeddingModel {
 						filtercount++;
 				}
 			}
-			System.out.println();
+			raw_meanl+=rawcount;
+			if(rawcount<=10)
+				raw_hit10l++;
+			filter_meanl+=filtercount;
+			if(filtercount<=10)
+				filter_hit10l++;
 			//right testing
-			
+			falsetriplet=copyints(test_triplets[i]);
+			rawcount=1;
+			filtercount=1;
+			for(int j=0;j<entityNum;j++)
+			{
+				if(j==test_triplets[i][0])
+					continue;
+				falsetriplet[0]=j;
+				double tscore=CalculateSimilarity(falsetriplet);
+				if(tscore<score)
+				{
+					rawcount++;
+					TripletHash tri=new TripletHash();
+					tri.setTriplet(falsetriplet);
+					if(!filteringSet.contains(falsetriplet))
+						filtercount++;
+				}
+			}
+			raw_meanr+=rawcount;
+			if(rawcount<=10)
+				raw_hit10r++;
+			filter_meanr+=filtercount;
+			if(filtercount<=10)
+				filter_hit10r++;			
 		}
+		long end=System.currentTimeMillis();
+		if(test_triplets.length<=0)
+			return;
+		//Print testing results
+		System.out.println("Testing is end at "+(end-start)/1000+"s. Final testing result:");
+		System.out.println("Left:\t"+(double)raw_hit10l/test_triplets.length
+				+"\t"+(double)raw_meanl/test_triplets.length
+				+"\t"+(double)filter_hit10l/test_triplets.length
+				+"\t"+(double)filter_meanl/test_triplets.length);
+		System.out.println("Right:\t"+(double)raw_hit10r/test_triplets.length
+				+"\t"+(double)raw_meanr/test_triplets.length
+				+"\t"+(double)filter_hit10r/test_triplets.length
+				+"\t"+(double)filter_meanr/test_triplets.length);		
+		System.out.println("Final:\t"+(double)(raw_hit10l+raw_hit10r)/test_triplets.length/2.
+				+"\t"+(double)(raw_meanl+raw_meanr)/test_triplets.length/2.
+				+"\t"+(double)(filter_hit10l+filter_hit10r)/test_triplets.length/2.
+				+"\t"+(double)(filter_meanl+filter_meanr)/test_triplets.length/2.);			
 	}
-	private int[] copyints(int[] s)
+	protected int[] copyints(int[] s)
 	{
 		int[] r=new int[s.length];
 		for(int i=0;i<s.length;i++)
 			r[i]=s[i];
 		return r;
 	}
-	public Set<TripletHash> BuildTrainAndValidTripletSet(int[][] train_triplets,int[][] valid_triplets)
+	/**
+	 * Form a set of all true tirplets in train and validate set.
+	 * It is useful in testing or other functions.
+	 * @param train_triplets
+	 * @param valid_triplets
+	 * @return
+	 */
+	public void BuildTrainAndValidTripletSet(int[][] train_triplets,int[][] valid_triplets)
 	{
-		Set<TripletHash> trainAndValidSet=new HashSet<TripletHash>();
+		filteringSet=new HashSet<TripletHash>();
 		int[][][] triplets=new int[2][][];
 		triplets[0]=train_triplets;
 		triplets[1]=valid_triplets;
@@ -473,10 +555,131 @@ public class EmbeddingModel {
 			{
 				TripletHash tri=new TripletHash();
 				tri.setTriplet(triplets[m][i]);
-				trainAndValidSet.add(tri);
+				filteringSet.add(tri);
 			}
 		}
-		return trainAndValidSet;
+	}
+
+	
+//**********************************************************************************	
+	public boolean isL1regular() {
+		return L1regular;
+	}
+
+	public void setL1regular(boolean l1regular) {
+		L1regular = l1regular;
+	}
+
+	public boolean isProject() {
+		return project;
+	}
+
+	public void setProject(boolean project) {
+		this.project = project;
+	}
+
+	public boolean isTrainprintable() {
+		return trainprintable;
+	}
+
+	public void setTrainprintable(boolean trainprintable) {
+		this.trainprintable = trainprintable;
+	}
+
+	public Random getRand() {
+		return rand;
+	}
+
+	public void setRand(Random rand) {
+		this.rand = rand;
+	}
+
+	public int getEpoch() {
+		return Epoch;
+	}
+
+	public void setEpoch(int epoch) {
+		Epoch = epoch;
+	}
+
+	public int getMinibranchsize() {
+		return minibranchsize;
+	}
+
+	public void setMinibranchsize(int minibranchsize) {
+		this.minibranchsize = minibranchsize;
+	}
+
+	public double getGamma() {
+		return gamma;
+	}
+
+	public void setGamma(double gamma) {
+		this.gamma = gamma;
+	}
+
+	public double getMargin() {
+		return margin;
+	}
+
+	public void setMargin(double margin) {
+		this.margin = margin;
+	}
+
+	public int getRandom_data_each_epoch() {
+		return random_data_each_epoch;
+	}
+
+	public void setRandom_data_each_epoch(int random_data_each_epoch) {
+		this.random_data_each_epoch = random_data_each_epoch;
+	}
+
+	public boolean isBern() {
+		return bern;
+	}
+
+	public void setBern(boolean bern) {
+		this.bern = bern;
+	}
+
+	public Set<TripletHash> getFilteringSet() {
+		return filteringSet;
+	}
+
+	public void setFilteringSet(Set<TripletHash> filteringSet) {
+		this.filteringSet = filteringSet;
+	}
+
+	public double getLammadaL1() {
+		return lammadaL1;
+	}
+
+	public void setLammadaL1(double lammadaL1) {
+		this.lammadaL1 = lammadaL1;
+	}
+
+	public double getLammadaL2() {
+		return lammadaL2;
+	}
+
+	public void setLammadaL2(double lammadaL2) {
+		this.lammadaL2 = lammadaL2;
+	}
+
+	public int getEntityNum() {
+		return entityNum;
+	}
+
+	public void setEntityNum(int entityNum) {
+		this.entityNum = entityNum;
+	}
+
+	public int getRelationNum() {
+		return relationNum;
+	}
+
+	public void setRelationNum(int relationNum) {
+		this.relationNum = relationNum;
 	}
 	
 }
