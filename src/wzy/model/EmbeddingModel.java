@@ -7,6 +7,7 @@ import java.util.Random;
 import java.util.Set;
 
 import wzy.meta.TripletHash;
+import wzy.model.para.SpecificParameter;
 
 /**
  * It is a base class for embedding-based models, i.e., TransE.
@@ -19,6 +20,7 @@ import wzy.meta.TripletHash;
  *      List<Object> ListingGradient();
  * 		void PreTesting(int[][] test_triplets);
  * 		void InitGradients();
+ *      void SetSpecificParameterStream(SpecificParameter para);
  * @author Zhuoyu Wei
  * @version 1.0
  */
@@ -31,11 +33,11 @@ public class EmbeddingModel {
 	protected boolean trainprintable=true;	
 	protected Random rand=new Random();	
 	
-	protected int Epoch=500;
+	protected int Epoch=1000;
 	protected int minibranchsize=4800;
-	protected double gamma=0.1;
+	protected double gamma=0.001;
 	protected double margin=1.;
-	protected int random_data_each_epoch=0;
+	protected int random_data_each_epoch=100000;
 	protected boolean bern=true;
 	protected Set<TripletHash> filteringSet; 
 	
@@ -63,7 +65,7 @@ public class EmbeddingModel {
 		for(int i=0;i<relationNum;i++)
 		{
 			entitySets[i][0]=new HashSet<Integer>();
-			entitySets[i][0]=new HashSet<Integer>();
+			entitySets[i][1]=new HashSet<Integer>();
 		}
 		for(int i=0;i<train_triplets.length;i++)
 		{
@@ -98,11 +100,10 @@ public class EmbeddingModel {
 	 * However, different model has different method of calculating gradients.
 	 * This function need be overwrote.
 	 * @param triplet calculate gradient for it
-	 * @param gradientList different model has different objects in this list, 
 	 * and they need cast the objects to embeddings in this method by themselves.
 	 * @need Override
 	 */
-	protected void CalculateGradient(int[] triplet,List<Object> gradientList)
+	protected void CalculateGradient(int[] triplet)
 	{}
 	
 	/**
@@ -114,7 +115,7 @@ public class EmbeddingModel {
 	{
 		for(int i=0;i<embeddingList.size();i++)
 		{
-			if(embeddingList.get(i) instanceof double[][])
+			if(embeddingList.get(i) instanceof double[][][])
 			{
 				UpgradeGradients((double[][][])embeddingList.get(i),(double[][][])gradientList.get(i));
 			}
@@ -276,8 +277,24 @@ public class EmbeddingModel {
 		List<Object> gradientList=ListingGradient();
 		for(int i=sindex;i<=eindex;i++)
 		{
-			CalculateGradient(train_triplets[i],gradientList);
+			CalculateGradient(train_triplets[i]);
 		}
+		
+/*		for(int i=0;i<gradientList.size();i++)
+		{
+			double[][]gradient=(double[][])gradientList.get(i);
+			for(int j=0;j<gradient.length;j++)
+			{
+				for(int k=0;k<gradient[j].length;k++)
+				{
+					if(Math.abs(gradient[j][k])>1e-6)
+					{
+						System.out.println(i+"\t"+j+"\t"+k);
+					}
+				}
+			}
+		}*/
+		
 		
 		UpgradeGradients(embeddingList,gradientList);
 		if(project)
@@ -363,7 +380,7 @@ public class EmbeddingModel {
 		int branch=train_triplets.length/minibranchsize;
 		if(train_triplets.length%minibranchsize>0)
 			branch++;
-		double lasttrain_point_err=Double.MIN_VALUE;
+		double lasttrain_point_err=Double.MAX_VALUE;
 		double lasttrain_pair_err=Double.MAX_VALUE;				
 		double lastvalid_point_err=Double.MAX_VALUE;
 		double lastvalid_pair_err=Double.MAX_VALUE;	
@@ -416,7 +433,7 @@ public class EmbeddingModel {
 				System.err.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s");
 				System.err.println("\t"+train_point_err+"\t"+train_pair_err+
 						"\t"+valid_point_err+"\t"+valid_pair_err+
-						"\t"+(lasttrain_point_err-train_point_err)+"\t"+(lasttrain_pair_err-train_pair_err)+
+						"\n\t"+(lasttrain_point_err-train_point_err)+"\t"+(lasttrain_pair_err-train_pair_err)+
 						"\t"+(lastvalid_point_err-valid_point_err)+"\t"+(lastvalid_pair_err-valid_pair_err));
 				
 				lasttrain_point_err=train_point_err;
@@ -475,7 +492,7 @@ public class EmbeddingModel {
 					rawcount++;
 					TripletHash tri=new TripletHash();
 					tri.setTriplet(falsetriplet);
-					if(!filteringSet.contains(falsetriplet))
+					if(!filteringSet.contains(tri))
 						filtercount++;
 				}
 			}
@@ -500,7 +517,7 @@ public class EmbeddingModel {
 					rawcount++;
 					TripletHash tri=new TripletHash();
 					tri.setTriplet(falsetriplet);
-					if(!filteringSet.contains(falsetriplet))
+					if(!filteringSet.contains(tri))
 						filtercount++;
 				}
 			}
@@ -559,7 +576,36 @@ public class EmbeddingModel {
 			}
 		}
 	}
+	
+	/**
+	 * Need to be overwrote
+	 * It is used to set specific parameters for specific embedding model, such as entity_dim and weight_matrix.
+	 * @param para
+	 * @need override
+	 */
+	public void SetSpecificParameterStream(SpecificParameter para)
+	{}
 
+	/**
+	 * Check whether a triplet is available. 
+	 * @param triplet
+	 * @return
+	 */
+	public boolean CheckTripletAvailable(int[] triplet)
+	{
+		boolean flag=true;
+		if(triplet[0]<0||triplet[0]>=entityNum)
+			flag=false;
+		if(triplet[1]<0||triplet[1]>=relationNum)
+			flag=false;		
+		if(triplet[2]<0||triplet[2]>=entityNum)
+			flag=false;		
+		if(!flag)
+		{
+			System.out.println("Error:\t"+triplet[0]+"\t"+triplet[1]+"\t"+triplet[2]);
+		}
+		return flag;
+	}
 	
 //**********************************************************************************	
 	public boolean isL1regular() {

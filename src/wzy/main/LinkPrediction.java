@@ -1,15 +1,18 @@
 package wzy.main;
 
-import wzy.io.FileTools;
 import wzy.thread.KBCProcess;
-import wzy.model.*;
+import wzy.model.TransE;
+import wzy.model.para.TransEParameter;
 
 public class LinkPrediction {
 
-	
-	
-	
-	
+	public static TransEParameter SetTransEParameter(int entitydim,int relationdim)
+	{
+		TransEParameter ptranse=new TransEParameter();
+		ptranse.setEntityDim(entitydim);
+		ptranse.setRelationDim(relationdim);
+		return ptranse;
+	}
 	
 	public static void main(String[] args)
 	{
@@ -21,8 +24,9 @@ public class LinkPrediction {
 				, dir+"liuzhiyuan.valid.txt"
 				, dir+"liuzhiyuan.test.txt"
 				, "\t");
-		kbc_raw_tester.setEm(new EmbeddingModel());
-
+		kbc_raw_tester.setEm(new TransE());
+		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(50,50));
+		kbc_raw_tester.Processing();
 		
 		
 	}

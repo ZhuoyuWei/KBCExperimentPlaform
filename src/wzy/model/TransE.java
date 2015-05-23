@@ -1,8 +1,11 @@
 package wzy.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import wzy.meta.TripletHash;
+import wzy.model.para.SpecificParameter;
+import wzy.model.para.TransEParameter;
 import wzy.tool.MatrixTool;
 
 public class TransE extends EmbeddingModel {
@@ -28,6 +31,7 @@ public class TransE extends EmbeddingModel {
 				if(rand.nextDouble()<0.5)
 					entityEmbedding[i][j]=-entityEmbedding[i][j];
 			}
+
 		}
 		for(int i=0;i<relationNum;i++)
 		{
@@ -37,10 +41,20 @@ public class TransE extends EmbeddingModel {
 				if(rand.nextDouble()<0.5)
 					relationEmbedding[i][j]=-relationEmbedding[i][j];
 			}
+			double x=MatrixTool.VectorNorm1(relationEmbedding[i]);
+			if(x>1)
+			{
+				for(int j=0;j<relation_dim;j++)
+				{
+					relationEmbedding[i][j]/=x;
+				}
+			}
 		}		
 	}
 	protected void InitGradients()
 	{
+		entityGradient=new double[entityNum][entity_dim];
+		relationGradient=new double[relationNum][relation_dim];
 		for(int i=0;i<entityGradient.length;i++)
 		{
 			for(int j=0;j<entityGradient[i].length;j++)
@@ -62,6 +76,8 @@ public class TransE extends EmbeddingModel {
 	@Override
 	public double CalculateSimilarity(int[] triplet)
 	{
+		if(!CheckTripletAvailable(triplet))
+			return Double.MAX_VALUE;
 		double[] resvector=new double[entity_dim];
 		for(int i=0;i<entity_dim;i++)
 		{
@@ -75,24 +91,24 @@ public class TransE extends EmbeddingModel {
 	 * L1 similarity
 	 */
 	@Override
-	protected void CalculateGradient(int[] triplet,List<Object> gradientList)
+	protected void CalculateGradient(int[] triplet)
 	{
 		TripletHash falseTri=new TripletHash();
 		falseTri.setTriplet(copyints(triplet));
 		 
 		double pr=0.5;
 		if(bern)
-			pr=relation_entity_counts[triplet[1]][1]
+			pr=(double)relation_entity_counts[triplet[1]][1]
 					/(relation_entity_counts[triplet[1]][0]+relation_entity_counts[triplet[1]][1]);
 
 		if(rand.nextDouble()<pr)
 		{
-			while(!filteringSet.contains(falseTri))
+			while(filteringSet.contains(falseTri))
 				falseTri.getTriplet()[2]=Math.abs(rand.nextInt())%entityNum;
 		}
 		else
 		{
-			while(!filteringSet.contains(falseTri))
+			while(filteringSet.contains(falseTri))
 				falseTri.getTriplet()[0]=Math.abs(rand.nextInt())%entityNum;			
 		}
 		int[] ftriplet=falseTri.getTriplet();
@@ -134,9 +150,7 @@ public class TransE extends EmbeddingModel {
 					entityGradient[ftriplet[2]][i]+=1;					
 				}
 			}			
-		}
-		
-		
+		}	
 	}
 	private double[] CalculateTripletVector(int[] triplet)
 	{
@@ -150,15 +164,24 @@ public class TransE extends EmbeddingModel {
 	
 	protected List<Object> ListingEmbedding()
 	{
-		List<Object> 
-		return null;
+		List<Object> embListing=new ArrayList<Object>();
+		embListing.add(entityEmbedding);
+		embListing.add(relationEmbedding);
+		return embListing;
 	}
 	protected List<Object> ListingGradient()
-	{}
+	{
+		List<Object> graListing=new ArrayList<Object>();
+		graListing.add(entityGradient);
+		graListing.add(relationGradient);
+		return graListing;
+	}
 
-	
-	protected void PreTesting(int[][] test_triplets)
-	{}
-	
-	
+	@Override
+	public void SetSpecificParameterStream(SpecificParameter para)
+	{
+		TransEParameter ptransE=(TransEParameter)para;
+		entity_dim=ptransE.getEntityDim();
+		relation_dim=ptransE.getRelationDim();
+	}
 }

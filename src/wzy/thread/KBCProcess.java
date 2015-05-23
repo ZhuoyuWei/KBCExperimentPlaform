@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 
 import wzy.io.FileTools;
 import wzy.model.*;
+import wzy.model.para.SpecificParameter;
 
 public class KBCProcess implements Callable{
 
@@ -144,7 +145,28 @@ public class KBCProcess implements Callable{
 		test_triplets=filted[2].toArray(new int[0][0]);
 	}
 	
+	private void StatisticTrainingSet()
+	{
+		int maxEntityId=-1;
+		int maxRelationId=-1;
+		for(int i=0;i<train_triplets.length;i++)
+		{
+			if(train_triplets[i][0]>maxEntityId)
+				maxEntityId=train_triplets[i][0];
+			if(train_triplets[i][1]>maxRelationId)
+				maxRelationId=train_triplets[i][1];
+			if(train_triplets[i][2]>maxEntityId)
+				maxEntityId=train_triplets[i][2];
+		}
+		em.setEntityNum(maxEntityId+1);
+		em.setRelationNum(maxRelationId+1);
+		
+	}
 	
+	public void SetEmbeddingModelSpecificParameter(SpecificParameter para)
+	{
+		em.SetSpecificParameterStream(para);
+	}
 	
 	public void Processing()
 	{
@@ -153,7 +175,9 @@ public class KBCProcess implements Callable{
 			System.err.println("There is no available embedding model, and please set it in main().");
 			System.exit(-1);
 		}
+		StatisticTrainingSet();
 		em.InitEmbeddingsRandomly();
+		em.CountEntityForRelation(train_triplets);
 		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
 		em.Training(train_triplets, validate_triplets);
 		em.Testing(test_triplets);
