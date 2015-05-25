@@ -87,6 +87,12 @@ public class FileTools {
 		return triplets.toArray(new String[0][0]);
 	}	
 	
+	/**
+	 * Print triplets as the specific format.
+	 * @param triplets
+	 * @param filename
+	 * @param separator
+	 */
 	public static void PrintIntegralTriplets(int[][] triplets,String filename,String separator)
 	{
 		try {
@@ -95,6 +101,66 @@ public class FileTools {
 			{
 				ps.println(triplets[i][0]+separator+triplets[i][1]+separator+triplets[i][2]);
 			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public static void PrintEmbeddingList(String filename,List<Object> embeddingList)
+	{
+		PrintStream ps=null;
+		try {
+			ps=new PrintStream(filename);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return; //if fail to create file, don't print model and continue process.
+		}
+		for(int i=0;i<embeddingList.size();i++)
+		{
+			if(embeddingList.get(i) instanceof double[][][])
+			{
+				PrintEmbedding((double[][][])embeddingList.get(i),ps);
+			}
+			else if(embeddingList.get(i) instanceof double[][])
+			{
+				PrintEmbedding((double[][])embeddingList.get(i),ps);	
+			}
+			else if(embeddingList.get(i) instanceof double[])
+			{
+				PrintEmbedding((double[])embeddingList.get(i),ps);			
+			}
+		}
+	}
+	public static void PrintEmbedding(double[][][] embedding,PrintStream ps)
+	{
+		for(int i=0;i<embedding.length;i++)
+		{
+			PrintEmbedding(embedding[i],ps);
+		}
+	}
+	public static void PrintEmbedding(double[][] embedding,PrintStream ps)
+	{
+		for(int i=0;i<embedding.length;i++)
+		{
+			PrintEmbedding(embedding[i],ps);
+		}		
+	}
+	public static void PrintEmbedding(double[] embedding,PrintStream ps)
+	{
+		if(embedding.length<=0)
+			return;
+		for(int i=0;i<embedding.length-1;i++)
+		{
+			ps.print(embedding[i]+"\t");
+		}
+		ps.println(embedding[embedding.length-1]);
+	}
+	public static void ReDirectOutputStreamToFile(String filename)
+	{
+		try {
+			System.setOut(new PrintStream(filename));
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

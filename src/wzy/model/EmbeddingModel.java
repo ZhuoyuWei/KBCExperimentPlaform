@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 
+import wzy.io.FileTools;
 import wzy.meta.TripletHash;
 import wzy.model.para.SpecificParameter;
+import wzy.tool.MatrixTool;
 
 /**
  * It is a base class for embedding-based models, i.e., TransE.
@@ -21,6 +23,7 @@ import wzy.model.para.SpecificParameter;
  * 		void PreTesting(int[][] test_triplets);
  * 		void InitGradients();
  *      void SetSpecificParameterStream(SpecificParameter para);
+ *      void PrintModel(String filename);
  * @author Zhuoyu Wei
  * @version 1.0
  */
@@ -35,10 +38,10 @@ public class EmbeddingModel {
 	
 	protected int Epoch=1000;
 	protected int minibranchsize=4800;
-	protected double gamma=0.001;
+	protected double gamma=0.0001;
 	protected double margin=1.;
 	protected int random_data_each_epoch=100000;
-	protected boolean bern=true;
+	protected boolean bern=true;//false;//true;
 	protected Set<TripletHash> filteringSet; 
 	
 	protected double lammadaL1=0.;
@@ -47,6 +50,10 @@ public class EmbeddingModel {
 	protected int entityNum;
 	protected int relationNum;
 	protected int[][] relation_entity_counts;
+	
+	protected String printMiddleModel_dir=null;
+	protected int printEpoch=100;
+	
 	
 	/**
 	 * Need to be overwrote
@@ -174,13 +181,19 @@ public class EmbeddingModel {
 	{
 		for(int i=0;i<embeddingList.size();i++)
 		{
-			if(embeddingList.get(i) instanceof double[][])
+			if(embeddingList.get(i) instanceof double[][][])
+			{
+				if(L1regular)
+					L1BallProjecting((double[][][])embeddingList.get(i));
+				else
+					L2BallProjecting((double[][][])embeddingList.get(i));	
+			}			
+			else if(embeddingList.get(i) instanceof double[][])
 			{
 				if(L1regular)
 					L1BallProjecting((double[][])embeddingList.get(i));
 				else
-					L2BallProjecting((double[][])embeddingList.get(i));
-					
+					L2BallProjecting((double[][])embeddingList.get(i));	
 			}
 			else if(embeddingList.get(i) instanceof double[])
 			{
@@ -192,6 +205,40 @@ public class EmbeddingModel {
 
 		}
 	}
+	protected void L1BallProjecting(double[][][] embeddings)
+	{
+		for(int i=0;i<embeddings.length;i++)
+		{
+			double x=MatrixTool.MatrixNorm1(embeddings[i]);
+			if(x>1)
+			{
+				for(int j=0;j<embeddings[i].length;j++)
+				{
+					for(int k=0;k<embeddings[i][j].length;k++)
+					{
+						embeddings[i][j][k]/=x;
+					}
+				}
+			}
+		}
+	}
+	protected void L2BallProjecting(double[][][] embeddings)
+	{
+		for(int i=0;i<embeddings.length;i++)
+		{
+			double x=MatrixTool.MatrixNorm2(embeddings[i]);
+			if(x>1)
+			{
+				for(int j=0;j<embeddings[i].length;j++)
+				{
+					for(int k=0;k<embeddings[i][j].length;k++)
+					{
+						embeddings[i][j][k]/=x;
+					}
+				}
+			}
+		}
+	}	
 	protected void L1BallProjecting(double[][] embeddings)
 	{
 		for(int i=0;i<embeddings.length;i++)
@@ -280,22 +327,6 @@ public class EmbeddingModel {
 			CalculateGradient(train_triplets[i]);
 		}
 		
-/*		for(int i=0;i<gradientList.size();i++)
-		{
-			double[][]gradient=(double[][])gradientList.get(i);
-			for(int j=0;j<gradient.length;j++)
-			{
-				for(int k=0;k<gradient[j].length;k++)
-				{
-					if(Math.abs(gradient[j][k])>1e-6)
-					{
-						System.out.println(i+"\t"+j+"\t"+k);
-					}
-				}
-			}
-		}*/
-		
-		
 		UpgradeGradients(embeddingList,gradientList);
 		if(project)
 			BallProjecting(embeddingList);
@@ -378,8 +409,8 @@ public class EmbeddingModel {
 	public void Training(int[][] train_triplets,int[][] validate_triplets)
 	{
 		int branch=train_triplets.length/minibranchsize;
-		if(train_triplets.length%minibranchsize>0)
-			branch++;
+		//if(train_triplets.length%minibranchsize>0) //if the size of minibranch didn't touch minibranch size
+			//branch++;
 		double lasttrain_point_err=Double.MAX_VALUE;
 		double lasttrain_pair_err=Double.MAX_VALUE;				
 		double lastvalid_point_err=Double.MAX_VALUE;
@@ -544,7 +575,8 @@ public class EmbeddingModel {
 		System.out.println("Final:\t"+(double)(raw_hit10l+raw_hit10r)/test_triplets.length/2.
 				+"\t"+(double)(raw_meanl+raw_meanr)/test_triplets.length/2.
 				+"\t"+(double)(filter_hit10l+filter_hit10r)/test_triplets.length/2.
-				+"\t"+(double)(filter_meanl+filter_meanr)/test_triplets.length/2.);			
+				+"\t"+(double)(filter_meanl+filter_meanr)/test_triplets.length/2.);
+		System.out.flush();
 	}
 	protected int[] copyints(int[] s)
 	{
@@ -590,6 +622,7 @@ public class EmbeddingModel {
 	 * Check whether a triplet is available. 
 	 * @param triplet
 	 * @return
+	 * @deprecated
 	 */
 	public boolean CheckTripletAvailable(int[] triplet)
 	{
@@ -605,6 +638,16 @@ public class EmbeddingModel {
 			System.out.println("Error:\t"+triplet[0]+"\t"+triplet[1]+"\t"+triplet[2]);
 		}
 		return flag;
+	}
+	
+	/**
+	 * After learning embeddings, we may save the model, and print it to the file with the model's specific format.
+	 * @param filename
+	 */
+	public void PrintModel(String filename)
+	{
+		List<Object> embeddingList=this.ListingEmbedding();
+		FileTools.PrintEmbeddingList(filename, embeddingList);
 	}
 	
 //**********************************************************************************	
@@ -728,4 +771,33 @@ public class EmbeddingModel {
 		this.relationNum = relationNum;
 	}
 	
+	
+	/**
+	 * Need to be overwrote
+	 * laze, to save best model parameter, i.e., learning rate and margin
+	 * @need overide
+	 */
+	public void SetBestParameter()
+	{}
+	
+	protected int[] GenerateFalseTriplet(int[] triplet)
+	{
+		double pr=0.5;
+		if(bern)
+			pr=(double)relation_entity_counts[triplet[1]][1]
+					/(relation_entity_counts[triplet[1]][0]+relation_entity_counts[triplet[1]][1]);
+		TripletHash falseTri=new TripletHash();
+		falseTri.setTriplet(copyints(triplet));
+		if(rand.nextDouble()<pr)
+		{
+			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[2]<0)
+				falseTri.getTriplet()[2]=(Math.abs(rand.nextInt()))%entityNum;
+		}
+		else
+		{
+			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[0]<0)
+				falseTri.getTriplet()[0]=(Math.abs(rand.nextInt()))%entityNum;			
+		}
+		return falseTri.getTriplet();
+	}
 }

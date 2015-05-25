@@ -82,5 +82,47 @@ public class MatrixTool {
 		}
 		return norm;
 	}	
+	public static double MatrixNorm2(double[][] mat)
+	{
+		double norm=0;
+		for(int i=0;i<mat.length;i++)
+		{
+			for(int j=0;j<mat[i].length;j++)
+			{
+				norm+=mat[i][j]*mat[i][j];
+			}
+		}
+		return norm;
+	}
+	public static double MatrixNorm1(double[][] mat)
+	{
+		double norm=0;
+		for(int i=0;i<mat.length;i++)
+		{
+			for(int j=0;j<mat[i].length;j++)
+			{
+				norm+=Math.abs(mat[i][j]);
+			}
+		}
+		return norm;		
+	}
 	
+	public static double[] CopyVector(double[] s)
+	{
+		double[] d=new double[s.length];
+		for(int i=0;i<s.length;i++)
+		{
+			d[i]=s[i];
+		}
+		return d;
+	}
+	public static double[][] CopyMatrix(double[][] s)
+	{
+		double[][] d=new double[s.length][];
+		for(int i=0;i<s.length;i++)
+		{
+			d[i]=CopyVector(s[i]);
+		}
+		return d;
+	}
 }

@@ -13,16 +13,30 @@ import wzy.model.para.SpecificParameter;
 public class KBCProcess implements Callable{
 
 
-
+	private String print_model_file=null;
+	private String print_log_file=null;
+	
 	private int[][] train_triplets;
 	private int[][] validate_triplets;
 	private int[][] test_triplets;
 	private EmbeddingModel em;
 	
+	
+	/**
+	 * Read triplets from a file.
+	 * @param filename
+	 * @param separator
+	 * @return
+	 */
 	public int[][] ReadTripletsFromFile(String filename,String separator)
 	{
 		return FileTools.ReadIntegralTriplets(filename, separator);
 	}
+	/**
+	 * copy one data set from other data set in memory.
+	 * @param triplets
+	 * @return
+	 */
 	public int[][] ReadTripletsFromTriplets(int[][] triplets)
 	{
 		int[][] res=new int[triplets.length][triplets[0].length];
@@ -35,18 +49,35 @@ public class KBCProcess implements Callable{
 		}
 		return res;
 	}
+	
+	/**
+	 * Read train, validate, test data sets from three files.
+	 * @param trainfile
+	 * @param validfile
+	 * @param testfile
+	 * @param separator
+	 */
 	public void SetThreeTriplets(String trainfile,String validfile,String testfile,String separator)
 	{
 		train_triplets=ReadTripletsFromFile(trainfile,separator);
 		validate_triplets=ReadTripletsFromFile(validfile,separator);
 		test_triplets=ReadTripletsFromFile(testfile,separator);
 	}	
+	
+	/**
+	 * @deprecated
+	 * @param kbc
+	 */
 	public void CopyThreeDataSets(KBCProcess kbc)
 	{
 		train_triplets=ReadTripletsFromTriplets(kbc.getTrain_triplets());
 		validate_triplets=ReadTripletsFromTriplets(kbc.getValidate_triplets());		
 		test_triplets=ReadTripletsFromTriplets(kbc.getTest_triplets());		
 	}
+	
+	/**
+	 * @deprecated
+	 */
 	public void FilterDataSet()
 	{
 		class ThreeInt
@@ -176,10 +207,16 @@ public class KBCProcess implements Callable{
 			System.exit(-1);
 		}
 		StatisticTrainingSet();
+		if(print_log_file!=null)
+			FileTools.ReDirectOutputStreamToFile(print_log_file);
+		//em.SetBestParameter();
 		em.InitEmbeddingsRandomly();
 		em.CountEntityForRelation(train_triplets);
 		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
 		em.Training(train_triplets, validate_triplets);
+		if(print_model_file!=null)
+			em.PrintModel(print_model_file);
+		
 		em.Testing(test_triplets);
 	}
 	
@@ -208,6 +245,19 @@ public class KBCProcess implements Callable{
 		this.em = em;
 	}
 	
+	public String getPrint_model_file() {
+		return print_model_file;
+	}
+	public void setPrint_model_file(String print_model_file) {
+		this.print_model_file = print_model_file;
+	}
+	
+	public String getPrint_log_file() {
+		return print_log_file;
+	}
+	public void setPrint_log_file(String print_log_file) {
+		this.print_log_file = print_log_file;
+	}
 	@Override
 	public Object call() throws Exception {
 		// TODO Auto-generated method stub
