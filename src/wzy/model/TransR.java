@@ -3,6 +3,7 @@ package wzy.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import wzy.io.FileTools;
 import wzy.meta.TripletHash;
 import wzy.model.para.SpecificParameter;
 import wzy.model.para.TransRParameter;
@@ -18,13 +19,52 @@ public class TransR extends EmbeddingModel{
 	private int entity_dim;
 	private int relation_dim;
 	
+	@Override
+	public void InitEmbeddingsMemory()
+	{
+		entityEmbedding=new double[entityNum][entity_dim];
+		relationEmbedding=new double[relationNum][relation_dim];
+		relationweight=new double[relationNum][entity_dim][relation_dim];		
+	}
+	
+	@Override
+	public void InitEmbeddingFromFile(String filename)
+	{
+		InitEmbeddingsMemory();
+		List<Object> embeddingList=new ArrayList<Object>();
+		embeddingList.add(entityEmbedding);
+		embeddingList.add(relationEmbedding);
+		FileTools.ReadEmbeddingsFromFile(filename, embeddingList);
+		for(int i=0;i<relationweight.length;i++)
+		{
+			double x=0;
+			for(int j=0;j<relationweight[i].length;j++)
+			{
+				for(int k=0;k<relationweight[i][j].length;k++)
+				{
+					relationweight[i][j][k]=rand.nextDouble();
+					//if(rand.nextDouble()<0.5)
+						//relationweight[i][j][k]=-relationweight[i][j][k];
+					x+=Math.abs(relationweight[i][j][k]);
+				}
+			}
+			if(x>1)
+			{
+				for(int j=0;j<relationweight[i].length;j++)
+				{
+					for(int k=0;k<relationweight[i][j].length;k++)
+					{
+						relationweight[i][j][k]/=x;
+					}
+				}				
+			}
+		}
+	}
 	
 	@Override
 	public void InitEmbeddingsRandomly()
 	{
-		entityEmbedding=new double[entityNum][entity_dim];
-		relationEmbedding=new double[relationNum][relation_dim];
-		relationweight=new double[relationNum][entity_dim][relation_dim];
+		InitEmbeddingsMemory();
 		for(int i=0;i<entityNum;i++)
 		{
 			for(int j=0;j<entity_dim;j++)
@@ -58,7 +98,19 @@ public class TransR extends EmbeddingModel{
 					relationEmbedding[i][j]/=x;
 				}
 			}
-		}		
+		}	
+		
+		
+		for(int i=0;i<relationweight.length;i++)
+		{
+			int mindim=entity_dim<relation_dim?entity_dim:relation_dim;
+			for(int j=0;j<mindim;j++)
+			{
+				relationweight[i][j][j]=1;
+			}
+		}
+		
+		/*
 		for(int i=0;i<relationweight.length;i++)
 		{
 			double x=0;
@@ -82,7 +134,7 @@ public class TransR extends EmbeddingModel{
 					}
 				}				
 			}
-		}
+		}*/
 	}
 	@Override
 	protected void InitGradients()

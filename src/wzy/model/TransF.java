@@ -7,6 +7,7 @@ import java.util.Map;
 import wzy.meta.TripletHash;
 import wzy.model.para.SpecificParameter;
 import wzy.model.para.TransEParameter;
+import wzy.model.para.TransFParameter;
 import wzy.tool.MatrixTool;
 
 public class TransF extends EmbeddingModel {
@@ -31,10 +32,16 @@ public class TransF extends EmbeddingModel {
 	}
 	
 	@Override
-	public void InitEmbeddingsRandomly()
+	protected void InitEmbeddingsMemory()
 	{
 		entityEmbedding=new double[entityNum][entity_dim];
 		relationEmbedding=new double[relationNum][relation_dim];
+	}
+	
+	@Override
+	public void InitEmbeddingsRandomly()
+	{
+		InitEmbeddingsMemory();
 		for(int i=0;i<entityNum;i++)
 		{
 			for(int j=0;j<entity_dim;j++)
@@ -132,7 +139,7 @@ public class TransF extends EmbeddingModel {
 			{
 				for(int j=0;j<entity_dim;j++)
 				{
-					res[j]+=(entityEmbedding[featureList.get(i)[2]][j]+relationEmbedding[featureList.get(i)[1]][j]);
+					res[j]+=(entityEmbedding[featureList.get(i)[0]][j]+relationEmbedding[featureList.get(i)[1]][j]);
 				}				
 			}
 		}
@@ -281,7 +288,7 @@ public class TransF extends EmbeddingModel {
 		double[] resvector=new double[entity_dim];
 		for(int i=0;i<entity_dim;i++)
 		{
-			resvector[i]=entityEmbedding[triplet[0]][i]+relationEmbedding[triplet[1]][i]-entityEmbedding[triplet[2]][i];
+			resvector[i]=hm[i]+relationEmbedding[triplet[1]][i]-tm[i];
 		}
 		return resvector;
 	}
@@ -304,9 +311,9 @@ public class TransF extends EmbeddingModel {
 	@Override
 	public void SetSpecificParameterStream(SpecificParameter para)
 	{
-		TransEParameter ptransE=(TransEParameter)para;
-		entity_dim=ptransE.getEntityDim();
-		relation_dim=ptransE.getRelationDim();
+		TransFParameter ptransF=(TransFParameter)para;
+		entity_dim=ptransF.getEntityDim();
+		relation_dim=ptransF.getRelationDim();
 	}
 	
 

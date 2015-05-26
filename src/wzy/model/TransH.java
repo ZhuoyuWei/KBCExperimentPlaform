@@ -3,6 +3,7 @@ package wzy.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import wzy.io.FileTools;
 import wzy.meta.TripletHash;
 import wzy.model.para.SpecificParameter;
 import wzy.model.para.TransEParameter;
@@ -22,12 +23,37 @@ public class TransH extends EmbeddingModel{
 	private int relation_dim;
 	
 	
+	
 	@Override
-	public void InitEmbeddingsRandomly()
+	public void InitEmbeddingsMemory()
 	{
 		entityEmbedding=new double[entityNum][entity_dim];
 		relationEmbedding=new double[relationNum][relation_dim];
-		relationweight=new double[relationNum][relation_dim];
+		relationweight=new double[relationNum][relation_dim];		
+	}
+	
+	@Override
+	public void InitEmbeddingFromFile(String filename)
+	{
+		InitEmbeddingsMemory();
+		List<Object> embeddingList=new ArrayList<Object>();
+		embeddingList.add(entityEmbedding);
+		embeddingList.add(relationEmbedding);
+		FileTools.ReadEmbeddingsFromFile(filename, embeddingList);
+		/*for(int i=0;i<relationNum;i++)
+		{
+			for(int j=0;j<relation_dim;j++)
+			{
+				relationweight[i][j]=1.;
+			}
+		}	*/
+	}
+
+	
+	@Override
+	public void InitEmbeddingsRandomly()
+	{
+		InitEmbeddingsMemory();
 		for(int i=0;i<entityNum;i++)
 		{
 			for(int j=0;j<entity_dim;j++)
@@ -62,23 +88,13 @@ public class TransH extends EmbeddingModel{
 				}
 			}
 		}		
-		for(int i=0;i<relationNum;i++)
+		/*for(int i=0;i<relationNum;i++)
 		{
 			for(int j=0;j<relation_dim;j++)
 			{
-				relationweight[i][j]=rand.nextDouble();
-				if(rand.nextDouble()<0.5)
-					relationweight[i][j]=-relationweight[i][j];
+				relationweight[i][j]=1.;
 			}
-			double x=MatrixTool.VectorNorm1(relationweight[i]);
-			if(x>1)
-			{
-				for(int j=0;j<relation_dim;j++)
-				{
-					relationweight[i][j]/=x;
-				}
-			}
-		}			
+		}*/		
 	}
 	
 	@Override
@@ -140,16 +156,20 @@ public class TransH extends EmbeddingModel{
 				if(truevector[i]>0)
 				{
 					entityGradient[triplet[0]][i]+=1-relationweight[triplet[1]][i];
+					//System.out.println(entityGradient[triplet[0]][i]);
 					relationGradient[triplet[1]][i]+=1;
+					//System.out.println(relationGradient[triplet[1]][i]);
 					entityGradient[triplet[2]][i]-=relationweight[triplet[1]][i]-1;
+					//System.out.println(entityGradient[triplet[2]][i]);					
 					relationweightGradient[triplet[1]][i]+=entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i];
+					//System.out.println(relationweightGradient[triplet[1]][i]);						
 				}
 				else
 				{
 					entityGradient[triplet[0]][i]-=1-relationweight[triplet[1]][i];
 					relationGradient[triplet[1]][i]-=1;
 					entityGradient[triplet[2]][i]+=relationweight[triplet[1]][i]-1;
-					relationweightGradient[triplet[1]][i]-=entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i];				
+					relationweightGradient[triplet[1]][i]-=entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i];	
 				}
 			}
 			for(int i=0;i<falsevector.length;i++)
@@ -178,8 +198,8 @@ public class TransH extends EmbeddingModel{
 		double[] ttran=new double[entity_dim];
 		for(int i=0;i<entity_dim;i++)
 		{
-			htran[i]=entityEmbedding[triplet[0]][i]*relationweight[triplet[1]][i];
-			ttran[i]=entityEmbedding[triplet[2]][i]*relationweight[triplet[1]][i];
+			htran[i]=entityEmbedding[triplet[0]][i]*(1-relationweight[triplet[1]][i]);
+			ttran[i]=entityEmbedding[triplet[2]][i]*(1-relationweight[triplet[1]][i]);
 		}
 		for(int i=0;i<entity_dim;i++)
 		{
@@ -213,6 +233,63 @@ public class TransH extends EmbeddingModel{
 		relation_dim=ptransH.getRelationDim();
 	}
 	
+	@Override
+	protected void RegularEmbedding()
+	{
+		if(L1regular)
+		{
+			L1BallProjecting(entityEmbedding);
+			L1BallProjecting(relationEmbedding);			
+		}
+		else
+		{
+			L2BallProjecting(entityEmbedding);
+			L2BallProjecting(relationEmbedding);
+		}
+		
+		RegularRelationWeight();
+		
+	}
+	private void RegularRelationWeight()
+	{
+		for(int i=0;i<relationweight.length;i++)
+		{
+			double x=0.;
+			for(int j=0;j<relationweight[i].length;j++)
+			{
+				x+=relationweight[i][j];
+			}
+			x/=relationweight[i].length;
+			for(int j=0;j<relationweight[i].length;j++)
+			{
+				relationweight[i][j]-=x;
+			}
+		}
+	}
 
+	/////////////////for debug
+	@Override
+	protected void UpgradeGradients(List<Object> embeddingList,List<Object> gradientList)
+	{
+		for(int i=2;i<embeddingList.size();i++)
+		{
+			if(embeddingList.get(i) instanceof double[][][])
+			{
+				UpgradeGradients((double[][][])embeddingList.get(i),(double[][][])gradientList.get(i));
+			}
+			else if(embeddingList.get(i) instanceof double[][])
+			{
+				UpgradeGradients((double[][])embeddingList.get(i),(double[][])gradientList.get(i));	
+			}
+			else if(embeddingList.get(i) instanceof double[])
+			{
+				UpgradeGradients((double[])embeddingList.get(i),(double[])gradientList.get(i));			
+			}
+			else
+			{
+				UpgradeGradients(embeddingList,gradientList,i);
+			}
+		}
+	}
 }
 

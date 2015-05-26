@@ -5,6 +5,7 @@ import wzy.model.TransE;
 import wzy.model.TransH;
 import wzy.model.TransR;
 import wzy.model.para.TransEParameter;
+import wzy.model.para.TransFParameter;
 import wzy.model.para.TransHParameter;
 import wzy.model.para.TransRParameter;
 
@@ -31,6 +32,14 @@ public class LinkPrediction {
 		ptranse.setEntityDim(entitydim);
 		ptranse.setRelationDim(relationdim);
 		return ptranse;
+	}	
+	
+	public static TransFParameter SetTransFParameter(int entitydim,int relationdim)
+	{
+		TransFParameter ptranse=new TransFParameter();
+		ptranse.setEntityDim(entitydim);
+		ptranse.setRelationDim(relationdim);
+		return ptranse;
 	}		
 	
 	public static void main(String[] args)
@@ -43,8 +52,9 @@ public class LinkPrediction {
 				, dir+"liuzhiyuan.valid.txt"
 				, dir+"liuzhiyuan.test.txt"
 				, "\t");
-		kbc_raw_tester.setEm(new TransR());
-		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransRParameter(50,50));
+		kbc_raw_tester.setEm(new TransE());
+		//kbc_raw_tester.setEmbedding_init_file(dir+"embedding_model_transE");
+		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(50,50));
 		kbc_raw_tester.Processing();
 		
 		

@@ -22,10 +22,16 @@ public class TransE extends EmbeddingModel {
 	
 	
 	@Override
-	public void InitEmbeddingsRandomly()
+	protected void InitEmbeddingsMemory()
 	{
 		entityEmbedding=new double[entityNum][entity_dim];
 		relationEmbedding=new double[relationNum][relation_dim];
+	}
+	
+	@Override
+	public void InitEmbeddingsRandomly()
+	{
+		InitEmbeddingsMemory();
 		for(int i=0;i<entityNum;i++)
 		{
 			for(int j=0;j<entity_dim;j++)
@@ -190,5 +196,27 @@ public class TransE extends EmbeddingModel {
 		
 		lammadaL1=0.;
 		lammadaL2=0.;
+	}
+	
+	@Override
+	protected void RegularEmbedding()
+	{
+		double[][][] embeddings=new double[2][][];
+		embeddings[0]=entityEmbedding;
+		embeddings[1]=relationEmbedding;
+		for(int i=0;i<embeddings.length;i++)
+		{
+			for(int j=0;j<embeddings[i].length;j++)
+			{
+				double x=MatrixTool.VectorNorm2(embeddings[i][j]);
+				if(x>0.1)
+				{
+					for(int k=0;k<embeddings[i][j].length;k++)
+					{
+						embeddings[i][j][k]/=x;
+					}
+				}
+			}
+		}
 	}
 }

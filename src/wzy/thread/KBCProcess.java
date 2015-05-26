@@ -15,11 +15,45 @@ public class KBCProcess implements Callable{
 
 	private String print_model_file=null;
 	private String print_log_file=null;
+	private String printMiddleModel_dir=null;
+	private String embedding_init_file=null;
 	
 	private int[][] train_triplets;
 	private int[][] validate_triplets;
 	private int[][] test_triplets;
 	private EmbeddingModel em;
+	
+	
+	
+	
+	public void Processing()
+	{
+		if(em==null)
+		{
+			System.err.println("There is no available embedding model, and please set it in main().");
+			System.exit(-1);
+		}
+		StatisticTrainingSet();
+		if(print_log_file!=null)
+			FileTools.ReDirectOutputStreamToFile(print_log_file);
+		if(printMiddleModel_dir!=null)
+		{
+			em.setPrintMiddleModel_dir(printMiddleModel_dir);
+			FileTools.makeDir(printMiddleModel_dir);
+		}
+		//em.SetBestParameter();
+		if(this.embedding_init_file!=null)
+			em.InitEmbeddingFromFile(embedding_init_file);
+		else
+			em.InitEmbeddingsRandomly();
+		em.CountEntityForRelation(train_triplets);
+		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
+		em.Training(train_triplets, validate_triplets);
+		if(print_model_file!=null)
+			em.PrintModel(print_model_file);
+		
+		em.Testing(test_triplets);
+	}
 	
 	
 	/**
@@ -65,7 +99,7 @@ public class KBCProcess implements Callable{
 	}	
 	
 	/**
-	 * @deprecated
+	 * Get three data set from the existing data set.
 	 * @param kbc
 	 */
 	public void CopyThreeDataSets(KBCProcess kbc)
@@ -199,25 +233,14 @@ public class KBCProcess implements Callable{
 		em.SetSpecificParameterStream(para);
 	}
 	
-	public void Processing()
+
+	/**
+	 * Adjust the learning rate. It is a usual parameter you need adjust.
+	 * @param gamma
+	 */
+	public void SetGamma(double gamma)
 	{
-		if(em==null)
-		{
-			System.err.println("There is no available embedding model, and please set it in main().");
-			System.exit(-1);
-		}
-		StatisticTrainingSet();
-		if(print_log_file!=null)
-			FileTools.ReDirectOutputStreamToFile(print_log_file);
-		//em.SetBestParameter();
-		em.InitEmbeddingsRandomly();
-		em.CountEntityForRelation(train_triplets);
-		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
-		em.Training(train_triplets, validate_triplets);
-		if(print_model_file!=null)
-			em.PrintModel(print_model_file);
-		
-		em.Testing(test_triplets);
+		em.setGamma(gamma);
 	}
 	
 	public int[][] getTrain_triplets() {
@@ -258,10 +281,25 @@ public class KBCProcess implements Callable{
 	public void setPrint_log_file(String print_log_file) {
 		this.print_log_file = print_log_file;
 	}
+	
+	public String getPrintMiddleModel_dir() {
+		return printMiddleModel_dir;
+	}
+	public void setPrintMiddleModel_dir(String printMiddleModel_dir) {
+		this.printMiddleModel_dir = printMiddleModel_dir;
+	}
+	
+	public String getEmbedding_init_file() {
+		return embedding_init_file;
+	}
+	public void setEmbedding_init_file(String embedding_init_file) {
+		this.embedding_init_file = embedding_init_file;
+	}
 	@Override
 	public Object call() throws Exception {
 		// TODO Auto-generated method stub
 		Processing();
 		return null;
 	}
+
 }

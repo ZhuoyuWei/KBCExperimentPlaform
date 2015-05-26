@@ -23,7 +23,8 @@ import wzy.tool.MatrixTool;
  * 		void PreTesting(int[][] test_triplets);
  * 		void InitGradients();
  *      void SetSpecificParameterStream(SpecificParameter para);
- *      void PrintModel(String filename);
+ *      void InitEmbeddingsMemory();
+ *      void RegularEmbedding();
  * @author Zhuoyu Wei
  * @version 1.0
  */
@@ -32,16 +33,16 @@ public class EmbeddingModel {
 	//protected double[][] entity_embedding
 	
 	protected boolean L1regular=false;
-	protected boolean project=true;
+	protected boolean project=false;
 	protected boolean trainprintable=true;	
 	protected Random rand=new Random();	
 	
 	protected int Epoch=1000;
 	protected int minibranchsize=4800;
-	protected double gamma=0.0001;
+	protected double gamma=0.005;
 	protected double margin=1.;
 	protected int random_data_each_epoch=100000;
-	protected boolean bern=true;//false;//true;
+	protected boolean bern=false;//true;//false;//true;
 	protected Set<TripletHash> filteringSet; 
 	
 	protected double lammadaL1=0.;
@@ -54,6 +55,89 @@ public class EmbeddingModel {
 	protected String printMiddleModel_dir=null;
 	protected int printEpoch=100;
 	
+	//for debug
+	protected int errcount=0;
+	
+	
+	
+	public void Training(int[][] train_triplets,int[][] validate_triplets)
+	{
+		int branch=train_triplets.length/minibranchsize;
+		//if(train_triplets.length%minibranchsize>0) //if the size of minibranch didn't touch minibranch size
+			//branch++;
+		double lasttrain_point_err=Double.MAX_VALUE;
+		double lasttrain_pair_err=Double.MAX_VALUE;				
+		double lastvalid_point_err=Double.MAX_VALUE;
+		double lastvalid_pair_err=Double.MAX_VALUE;	
+		for(int epoch=0;epoch<Epoch;epoch++)
+		{
+			//Disrupt the order of training data set
+			long start=System.currentTimeMillis();
+			for(int i=0;i<random_data_each_epoch;i++)
+			{
+				int a=Math.abs(rand.nextInt())%train_triplets.length;
+				int b=Math.abs(rand.nextInt())%train_triplets.length;	
+				int[] t=train_triplets[a];
+				train_triplets[a]=train_triplets[b];
+				train_triplets[b]=t;
+			}
+			
+			for(int i=0;i<branch;i++)
+			{
+				int sindex=i*minibranchsize;
+				int eindex=(i+1)*minibranchsize-1;
+				if(eindex>=train_triplets.length)
+					eindex=train_triplets.length-1;
+				InitGradients();
+				OneBranchTraining(train_triplets,sindex,eindex);	
+			}
+			long end=System.currentTimeMillis();
+			if(trainprintable)
+			{
+				//you can change printable information which is your interets.
+				//Or you can change System.out to file
+				double train_point_err=0.;
+				double train_pair_err=0.;				
+				double valid_point_err=0.;
+				double valid_pair_err=0.;				
+				for(int i=0;i<train_triplets.length;i++)
+				{				
+					train_point_err+=CalculatePointError(train_triplets[i]);
+					train_pair_err+=CalculatePairError(train_triplets[i]);
+				}
+				for(int i=0;i<validate_triplets.length;i++)
+				{
+					valid_point_err+=CalculatePointError(validate_triplets[i]);
+					valid_pair_err+=CalculatePairError(validate_triplets[i]);					
+				}
+				end=System.currentTimeMillis();
+				train_point_err/=train_triplets.length;
+				train_pair_err/=train_triplets.length;
+				valid_point_err/=validate_triplets.length;
+				valid_pair_err/=validate_triplets.length;
+				System.err.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s");
+				System.err.println("\t"+train_point_err+"\t"+train_pair_err+
+						"\t"+valid_point_err+"\t"+valid_pair_err+
+						"\n\t"+(lasttrain_point_err-train_point_err)+"\t"+(lasttrain_pair_err-train_pair_err)+
+						"\t"+(lastvalid_point_err-valid_point_err)+"\t"+(lastvalid_pair_err-valid_pair_err));
+				
+				lasttrain_point_err=train_point_err;
+				lasttrain_pair_err=train_pair_err;
+				lastvalid_point_err=valid_point_err;
+				lastvalid_pair_err=valid_pair_err;
+				
+			}
+			
+			if(printMiddleModel_dir!=null)
+			{
+				if(epoch%printEpoch==printEpoch-1)
+				{
+					this.PrintModel(printMiddleModel_dir+"/epoch"+epoch);
+				}
+			}
+			
+		}
+	}
 	
 	/**
 	 * Need to be overwrote
@@ -63,6 +147,12 @@ public class EmbeddingModel {
 	 * @need Override
 	 */
 	public void InitEmbeddingsRandomly()
+	{}
+	
+	protected void InitEmbeddingsMemory()
+	{}
+	
+	public void InitEmbeddingFromFile(String filename)
 	{}
 	
 	public void CountEntityForRelation(int[][] train_triplets)
@@ -330,7 +420,18 @@ public class EmbeddingModel {
 		UpgradeGradients(embeddingList,gradientList);
 		if(project)
 			BallProjecting(embeddingList);
+		else
+			RegularEmbedding();
 	}
+	
+	/**
+	 * Need to be overwrote.
+	 * Regular embeddings, if project flag is set as false, it doesn't use standard projecting algorithm,
+	 * but uses model's own regular function.
+	 * @need override
+	 */
+	protected void RegularEmbedding()
+	{}
 	
 	protected boolean DiscriminateTripletMinium(double score)
 	{
@@ -406,76 +507,7 @@ public class EmbeddingModel {
 	protected void InitGradients()
 	{}
 	
-	public void Training(int[][] train_triplets,int[][] validate_triplets)
-	{
-		int branch=train_triplets.length/minibranchsize;
-		//if(train_triplets.length%minibranchsize>0) //if the size of minibranch didn't touch minibranch size
-			//branch++;
-		double lasttrain_point_err=Double.MAX_VALUE;
-		double lasttrain_pair_err=Double.MAX_VALUE;				
-		double lastvalid_point_err=Double.MAX_VALUE;
-		double lastvalid_pair_err=Double.MAX_VALUE;	
-		for(int epoch=0;epoch<Epoch;epoch++)
-		{
-			//Disrupt the order of training data set
-			long start=System.currentTimeMillis();
-			for(int i=0;i<random_data_each_epoch;i++)
-			{
-				int a=Math.abs(rand.nextInt())%train_triplets.length;
-				int b=Math.abs(rand.nextInt())%train_triplets.length;	
-				int[] t=train_triplets[a];
-				train_triplets[a]=train_triplets[b];
-				train_triplets[b]=t;
-			}
-			
-			for(int i=0;i<branch;i++)
-			{
-				int sindex=i*minibranchsize;
-				int eindex=(i+1)*minibranchsize-1;
-				if(eindex>=train_triplets.length)
-					eindex=train_triplets.length-1;
-				InitGradients();
-				OneBranchTraining(train_triplets,sindex,eindex);	
-			}
-			long end=System.currentTimeMillis();
-			if(trainprintable)
-			{
-				//you can change printable information which is your interets.
-				//Or you can change System.out to file
-				double train_point_err=0.;
-				double train_pair_err=0.;				
-				double valid_point_err=0.;
-				double valid_pair_err=0.;				
-				for(int i=0;i<train_triplets.length;i++)
-				{				
-					train_point_err+=CalculatePointError(train_triplets[i]);
-					train_pair_err+=CalculatePairError(train_triplets[i]);
-				}
-				for(int i=0;i<validate_triplets.length;i++)
-				{
-					valid_point_err+=CalculatePointError(validate_triplets[i]);
-					valid_pair_err+=CalculatePairError(validate_triplets[i]);					
-				}
-				end=System.currentTimeMillis();
-				train_point_err/=train_triplets.length;
-				train_pair_err/=train_triplets.length;
-				valid_point_err/=validate_triplets.length;
-				valid_pair_err/=validate_triplets.length;
-				System.err.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s");
-				System.err.println("\t"+train_point_err+"\t"+train_pair_err+
-						"\t"+valid_point_err+"\t"+valid_pair_err+
-						"\n\t"+(lasttrain_point_err-train_point_err)+"\t"+(lasttrain_pair_err-train_pair_err)+
-						"\t"+(lastvalid_point_err-valid_point_err)+"\t"+(lastvalid_pair_err-valid_pair_err));
-				
-				lasttrain_point_err=train_point_err;
-				lasttrain_pair_err=train_pair_err;
-				lastvalid_point_err=valid_point_err;
-				lastvalid_pair_err=valid_pair_err;
-				
-			}
-			
-		}
-	}
+
 	
 	/**
 	 * Need to be overwrote.
@@ -650,6 +682,41 @@ public class EmbeddingModel {
 		FileTools.PrintEmbeddingList(filename, embeddingList);
 	}
 	
+	/**
+	 * Need to be overwrote
+	 * laze, to save best model parameter, i.e., learning rate and margin
+	 * @need overide
+	 */
+	public void SetBestParameter()
+	{}
+	
+	/**
+	 * Generate a false triplet from the true one, it can be bern or unif, which is depend on 'bern' variable.
+	 * @param triplet
+	 * @return
+	 */
+	protected int[] GenerateFalseTriplet(int[] triplet)
+	{
+		double pr=0.5;
+		if(bern)
+			pr=(double)relation_entity_counts[triplet[1]][1]
+					/(relation_entity_counts[triplet[1]][0]+relation_entity_counts[triplet[1]][1]);
+		TripletHash falseTri=new TripletHash();
+		falseTri.setTriplet(copyints(triplet));
+		if(rand.nextDouble()<pr)
+		{
+			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[2]<0)
+				falseTri.getTriplet()[2]=(Math.abs(rand.nextInt()))%entityNum;
+		}
+		else
+		{
+			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[0]<0)
+				falseTri.getTriplet()[0]=(Math.abs(rand.nextInt()))%entityNum;			
+		}
+		return falseTri.getTriplet();
+	}
+	
+	
 //**********************************************************************************	
 	public boolean isL1regular() {
 		return L1regular;
@@ -770,34 +837,14 @@ public class EmbeddingModel {
 	public void setRelationNum(int relationNum) {
 		this.relationNum = relationNum;
 	}
-	
-	
-	/**
-	 * Need to be overwrote
-	 * laze, to save best model parameter, i.e., learning rate and margin
-	 * @need overide
-	 */
-	public void SetBestParameter()
-	{}
-	
-	protected int[] GenerateFalseTriplet(int[] triplet)
-	{
-		double pr=0.5;
-		if(bern)
-			pr=(double)relation_entity_counts[triplet[1]][1]
-					/(relation_entity_counts[triplet[1]][0]+relation_entity_counts[triplet[1]][1]);
-		TripletHash falseTri=new TripletHash();
-		falseTri.setTriplet(copyints(triplet));
-		if(rand.nextDouble()<pr)
-		{
-			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[2]<0)
-				falseTri.getTriplet()[2]=(Math.abs(rand.nextInt()))%entityNum;
-		}
-		else
-		{
-			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[0]<0)
-				falseTri.getTriplet()[0]=(Math.abs(rand.nextInt()))%entityNum;			
-		}
-		return falseTri.getTriplet();
+
+	public String getPrintMiddleModel_dir() {
+		return printMiddleModel_dir;
 	}
+
+	public void setPrintMiddleModel_dir(String printMiddleModel_dir) {
+		this.printMiddleModel_dir = printMiddleModel_dir;
+	}
+
+
 }
