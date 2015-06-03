@@ -23,7 +23,7 @@ public class KBCProcess implements Callable{
 	private int[][] test_triplets;
 	private EmbeddingModel em;
 	
-	
+	private boolean quiet=false;
 	
 	
 	public void Processing()
@@ -35,7 +35,10 @@ public class KBCProcess implements Callable{
 		}
 		StatisticTrainingSet();
 		if(print_log_file!=null)
-			FileTools.ReDirectOutputStreamToFile(print_log_file);
+		{
+			//FileTools.ReDirectOutputStreamToFile(print_log_file);
+			em.setPrint_log_file(print_log_file);
+		}
 		if(printMiddleModel_dir!=null)
 		{
 			em.setPrintMiddleModel_dir(printMiddleModel_dir);
@@ -242,6 +245,14 @@ public class KBCProcess implements Callable{
 	{
 		em.setGamma(gamma);
 	}
+	public void SetMiniBranch(int mini)
+	{
+		em.setMinibranchsize(mini);
+	}
+	public void SetMargin(double margin)
+	{
+		em.setMargin(margin);
+	}
 	
 	public int[][] getTrain_triplets() {
 		return train_triplets;
@@ -295,6 +306,16 @@ public class KBCProcess implements Callable{
 	public void setEmbedding_init_file(String embedding_init_file) {
 		this.embedding_init_file = embedding_init_file;
 	}
+	
+	public boolean isQuiet() {
+		return quiet;
+	}
+	public void setQuiet(boolean quiet) {
+		this.quiet = quiet;
+		em.setQuiet(quiet);
+	}
+
+
 	@Override
 	public Object call() throws Exception {
 		// TODO Auto-generated method stub

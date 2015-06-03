@@ -37,26 +37,10 @@ public class TransR extends EmbeddingModel{
 		FileTools.ReadEmbeddingsFromFile(filename, embeddingList);
 		for(int i=0;i<relationweight.length;i++)
 		{
-			double x=0;
-			for(int j=0;j<relationweight[i].length;j++)
+			int mindim=entity_dim<relation_dim?entity_dim:relation_dim;
+			for(int j=0;j<mindim;j++)
 			{
-				for(int k=0;k<relationweight[i][j].length;k++)
-				{
-					relationweight[i][j][k]=rand.nextDouble();
-					//if(rand.nextDouble()<0.5)
-						//relationweight[i][j][k]=-relationweight[i][j][k];
-					x+=Math.abs(relationweight[i][j][k]);
-				}
-			}
-			if(x>1)
-			{
-				for(int j=0;j<relationweight[i].length;j++)
-				{
-					for(int k=0;k<relationweight[i][j].length;k++)
-					{
-						relationweight[i][j][k]/=x;
-					}
-				}				
+				relationweight[i][j][j]=1;
 			}
 		}
 	}
@@ -198,7 +182,7 @@ public class TransR extends EmbeddingModel{
 					{
 						entityGradient[triplet[0]][j]+=relationweight[triplet[1]][j][i];
 						entityGradient[triplet[2]][j]-=relationweight[triplet[1]][j][i];	
-						relationweightGradient[triplet[1]][j][i]+=entityGradient[triplet[0]][j]-entityGradient[triplet[2]][j];
+						relationweightGradient[triplet[1]][j][i]+=entityEmbedding[triplet[0]][j]-entityEmbedding[triplet[2]][j];
 					}			
 					relationGradient[triplet[1]][i]+=1;
 				}
@@ -208,7 +192,7 @@ public class TransR extends EmbeddingModel{
 					{
 						entityGradient[triplet[0]][j]-=relationweight[triplet[1]][j][i];
 						entityGradient[triplet[2]][j]+=relationweight[triplet[1]][j][i];	
-						relationweightGradient[triplet[1]][j][i]-=entityGradient[triplet[0]][j]-entityGradient[triplet[2]][j];
+						relationweightGradient[triplet[1]][j][i]-=entityEmbedding[triplet[0]][j]-entityEmbedding[triplet[2]][j];
 					}			
 					relationGradient[triplet[1]][i]-=1;				
 				}
@@ -221,7 +205,7 @@ public class TransR extends EmbeddingModel{
 					{
 						entityGradient[ftriplet[0]][j]+=relationweight[ftriplet[1]][j][i];
 						entityGradient[ftriplet[2]][j]-=relationweight[ftriplet[1]][j][i];	
-						relationweightGradient[ftriplet[1]][j][i]+=entityGradient[ftriplet[0]][j]-entityGradient[ftriplet[2]][j];
+						relationweightGradient[ftriplet[1]][j][i]+=entityEmbedding[ftriplet[0]][j]-entityEmbedding[ftriplet[2]][j];
 					}			
 					relationGradient[ftriplet[1]][i]+=1;
 				}
@@ -231,7 +215,7 @@ public class TransR extends EmbeddingModel{
 					{
 						entityGradient[ftriplet[0]][j]-=relationweight[ftriplet[1]][j][i];
 						entityGradient[ftriplet[2]][j]+=relationweight[ftriplet[1]][j][i];	
-						relationweightGradient[ftriplet[1]][j][i]-=entityGradient[ftriplet[0]][j]-entityGradient[ftriplet[2]][j];
+						relationweightGradient[ftriplet[1]][j][i]-=entityEmbedding[ftriplet[0]][j]-entityEmbedding[ftriplet[2]][j];
 					}			
 					relationGradient[ftriplet[1]][i]-=1;						
 				}
@@ -270,18 +254,83 @@ public class TransR extends EmbeddingModel{
 	@Override
 	public void SetBestParameter()
 	{
-		L1regular=false;
-		project=true;
-		trainprintable=true;	
-
-		Epoch=1000;
-		minibranchsize=4800;
-		gamma=0.001;
-		margin=1.;
-		random_data_each_epoch=100000;
-		bern=false;
-		
-		lammadaL1=0.;
-		lammadaL2=0.;
 	}
+	
+	@Override
+	protected void RegularEmbedding(int[][] train_triplets,int sindex,int eindex)
+	{
+		List<Object> embList=new ArrayList<Object>();
+		embList.add(entityEmbedding);
+		embList.add(relationEmbedding);
+		BallProjecting(embList);
+		
+		for(int i=0;i<this.relationweight.length;i++)
+		{
+			for(int j=0;j<relation_dim;j++)
+			{
+				double x=0.;
+				for(int k=0;k<entity_dim;k++)
+				{
+					x+=Math.pow(relationweight[i][k][j], 2.);
+				}
+				x=Math.sqrt(x);
+				if(x>1.)
+				{
+					for(int k=0;k<entity_dim;k++)
+						relationweight[i][k][j]/=x;
+				}
+			}
+		}
+		//CutRelationWeigh(train_triplets,sindex,eindex);
+	}
+	
+	private void CutRelationWeigh(int[][] train_triplets,int sindex,int eindex)
+	{
+		while(true)
+		{
+			int count=0;
+			for(int i=sindex;i<=eindex;i++)
+			{
+				int[] entity=new int[2];
+				entity[0]=train_triplets[i][0];
+				entity[1]=train_triplets[i][2];		
+				for(int j=0;j<2;j++)
+				{
+					double x=0.;
+					for(int k=0;k<relation_dim;k++)
+					{
+						double t=0;
+						for(int h=0;h<entity_dim;h++)
+						{
+							t+=entityEmbedding[entity[j]][h]*relationweight[train_triplets[i][1]][h][k];
+						}
+						x+=t*t;
+					}
+					x=Math.sqrt(x);
+					if(x>1)
+					{
+						count++;
+						
+						for(int k=0;k<relation_dim;k++)
+						{
+							double t=0;
+							for(int h=0;h<entity_dim;h++)
+							{
+								t+=entityEmbedding[entity[j]][h]*relationweight[train_triplets[i][1]][h][k];
+							}
+							
+							for(int h=0;h<entity_dim;h++)
+							{
+								relationweight[train_triplets[i][1]][h][k]-=gamma*t*entityEmbedding[entity[j]][h];
+								entityEmbedding[entity[j]][h]-=gamma*t*relationweight[train_triplets[i][1]][h][k];
+							}							
+						}
+					}
+				}
+			}
+			if(count<=0)
+				break;
+		}
+	}
+	
 }

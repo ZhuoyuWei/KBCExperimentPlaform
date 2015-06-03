@@ -1,9 +1,16 @@
 package wzy.main;
 
 import wzy.thread.KBCProcess;
+import wzy.model.NoTrans;
+import wzy.model.NoTransS;
+import wzy.model.RevTransE;
 import wzy.model.TransE;
+import wzy.model.TransE_rl;
+import wzy.model.TransF_JF;
 import wzy.model.TransH;
 import wzy.model.TransR;
+import wzy.model.TransS;
+import wzy.model.TransT;
 import wzy.model.para.TransEParameter;
 import wzy.model.para.TransFParameter;
 import wzy.model.para.TransHParameter;
@@ -45,6 +52,7 @@ public class LinkPrediction {
 	public static void main(String[] args)
 	{
 		String dir="F:\\emnlp2015\\fb15k\\FB15k\\";
+		//String dir=args[0];
 		
 		//Read Three DB Files
 		KBCProcess kbc_raw_tester=new KBCProcess();
@@ -52,7 +60,8 @@ public class LinkPrediction {
 				, dir+"liuzhiyuan.valid.txt"
 				, dir+"liuzhiyuan.test.txt"
 				, "\t");
-		kbc_raw_tester.setEm(new TransE());
+		kbc_raw_tester.setEm(new NoTrans());
+		//kbc_raw_tester.setPrint_model_file(dir+"/TransF_JF.model");
 		//kbc_raw_tester.setEmbedding_init_file(dir+"embedding_model_transE");
 		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(50,50));
 		kbc_raw_tester.Processing();

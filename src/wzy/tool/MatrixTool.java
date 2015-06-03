@@ -70,6 +70,7 @@ public class MatrixTool {
 		{
 			norm+=Math.pow(vec[i],2.);
 		}
+		norm=Math.sqrt(norm);
 		return norm;
 	}
 	

@@ -25,6 +25,7 @@ import wzy.tool.MatrixTool;
  *      void SetSpecificParameterStream(SpecificParameter para);
  *      void InitEmbeddingsMemory();
  *      void RegularEmbedding();
+ *      void InitEmbeddingFromFile(String filename);
  * @author Zhuoyu Wei
  * @version 1.0
  */
@@ -33,13 +34,13 @@ public class EmbeddingModel {
 	//protected double[][] entity_embedding
 	
 	protected boolean L1regular=false;
-	protected boolean project=false;
+	protected boolean project=true;//false;
 	protected boolean trainprintable=true;	
 	protected Random rand=new Random();	
 	
-	protected int Epoch=1000;
+	protected int Epoch=100;
 	protected int minibranchsize=4800;
-	protected double gamma=0.005;
+	protected double gamma=0.01;
 	protected double margin=1.;
 	protected int random_data_each_epoch=100000;
 	protected boolean bern=false;//true;//false;//true;
@@ -57,8 +58,8 @@ public class EmbeddingModel {
 	
 	//for debug
 	protected int errcount=0;
-	
-	
+	protected boolean quiet=false;
+	protected String print_log_file=null;
 	
 	public void Training(int[][] train_triplets,int[][] validate_triplets)
 	{
@@ -421,7 +422,7 @@ public class EmbeddingModel {
 		if(project)
 			BallProjecting(embeddingList);
 		else
-			RegularEmbedding();
+			RegularEmbedding(train_triplets,sindex,eindex);
 	}
 	
 	/**
@@ -429,8 +430,11 @@ public class EmbeddingModel {
 	 * Regular embeddings, if project flag is set as false, it doesn't use standard projecting algorithm,
 	 * but uses model's own regular function.
 	 * @need override
+	 * @param train_triplets
+	 * @param sindex
+	 * @param eindex
 	 */
-	protected void RegularEmbedding()
+	protected void RegularEmbedding(int[][] train_triplets,int sindex,int eindex)
 	{}
 	
 	protected boolean DiscriminateTripletMinium(double score)
@@ -469,16 +473,10 @@ public class EmbeddingModel {
 	 */
 	protected double CalculatePairError(int[] triplet)
 	{
-		int[][] falsetriplets=new int[2][3];
-		for(int i=0;i<2;i++)
-		{
-			for(int j=0;j<3;j++)
-			{
-				falsetriplets[i][j]=triplet[j];
-			}
-		}
-		falsetriplets[0][2]=Math.abs(rand.nextInt())%entityNum;
-		falsetriplets[1][0]=Math.abs(rand.nextInt())%entityNum;
+		int[][] falsetriplets=new int[2][];
+
+		falsetriplets[0]=GenerateFalseTriplet(triplet,0);
+		falsetriplets[1]=GenerateFalseTriplet(triplet,1);
 		
 		double truesimilarity=CalculateSimilarity(triplet);
 		double leftfalsesimilarity=CalculateSimilarity(falsetriplets[0]);
@@ -520,7 +518,8 @@ public class EmbeddingModel {
 	
 
 	/**
-	 * 
+	 * Testing methods: Link prediciton, which is described in NIPS2013 TransE.
+	 * As default, we only evaluated 
 	 */
 	public void Testing(int[][] test_triplets)
 	{
@@ -595,21 +594,36 @@ public class EmbeddingModel {
 		if(test_triplets.length<=0)
 			return;
 		//Print testing results
-		System.out.println("Testing is end at "+(end-start)/1000+"s. Final testing result:");
-		System.out.println("Left:\t"+(double)raw_hit10l/test_triplets.length
-				+"\t"+(double)raw_meanl/test_triplets.length
-				+"\t"+(double)filter_hit10l/test_triplets.length
-				+"\t"+(double)filter_meanl/test_triplets.length);
-		System.out.println("Right:\t"+(double)raw_hit10r/test_triplets.length
-				+"\t"+(double)raw_meanr/test_triplets.length
-				+"\t"+(double)filter_hit10r/test_triplets.length
-				+"\t"+(double)filter_meanr/test_triplets.length);		
-		System.out.println("Final:\t"+(double)(raw_hit10l+raw_hit10r)/test_triplets.length/2.
-				+"\t"+(double)(raw_meanl+raw_meanr)/test_triplets.length/2.
-				+"\t"+(double)(filter_hit10l+filter_hit10r)/test_triplets.length/2.
-				+"\t"+(double)(filter_meanl+filter_meanr)/test_triplets.length/2.);
-		System.out.flush();
+		if(!quiet)
+		{
+			System.out.println("Testing is end at "+(end-start)/1000+"s. Final testing result:");
+			System.out.println("Left:\t"+(double)raw_hit10l/test_triplets.length
+					+"\t"+(double)raw_meanl/test_triplets.length
+					+"\t"+(double)filter_hit10l/test_triplets.length
+					+"\t"+(double)filter_meanl/test_triplets.length);
+			System.out.println("Right:\t"+(double)raw_hit10r/test_triplets.length
+					+"\t"+(double)raw_meanr/test_triplets.length
+					+"\t"+(double)filter_hit10r/test_triplets.length
+					+"\t"+(double)filter_meanr/test_triplets.length);		
+			System.out.println("Final:\t"+(double)(raw_hit10l+raw_hit10r)/test_triplets.length/2.
+					+"\t"+(double)(raw_meanl+raw_meanr)/test_triplets.length/2.
+					+"\t"+(double)(filter_hit10l+filter_hit10r)/test_triplets.length/2.
+					+"\t"+(double)(filter_meanl+filter_meanr)/test_triplets.length/2.);
+			System.out.flush();
+		}
+		if(print_log_file!=null)
+		{
+			FileTools.PrintFinalResult(print_log_file, end-start, raw_hit10l,
+					raw_meanl, filter_hit10l, filter_meanl, raw_hit10r, raw_meanr,
+					filter_hit10r, filter_meanr, test_triplets.length);
+		}
 	}
+	
+	public void Testing_Classify(int[] test_triplets)
+	{
+		//for()
+	}
+	
 	protected int[] copyints(int[] s)
 	{
 		int[] r=new int[s.length];
@@ -715,7 +729,22 @@ public class EmbeddingModel {
 		}
 		return falseTri.getTriplet();
 	}
-	
+	protected int[] GenerateFalseTriplet(int[] triplet,int lr)
+	{
+		TripletHash falseTri=new TripletHash();
+		falseTri.setTriplet(copyints(triplet));
+		if(lr==0)
+		{
+			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[2]<0)
+				falseTri.getTriplet()[2]=(Math.abs(rand.nextInt()))%entityNum;
+		}
+		else
+		{
+			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[0]<0)
+				falseTri.getTriplet()[0]=(Math.abs(rand.nextInt()))%entityNum;			
+		}
+		return falseTri.getTriplet();
+	}	
 	
 //**********************************************************************************	
 	public boolean isL1regular() {
@@ -846,5 +875,22 @@ public class EmbeddingModel {
 		this.printMiddleModel_dir = printMiddleModel_dir;
 	}
 
+	public boolean isQuiet() {
+		return quiet;
+	}
+
+	public void setQuiet(boolean quiet) {
+		this.quiet = quiet;
+	}
+
+	public String getPrint_log_file() {
+		return print_log_file;
+	}
+
+	public void setPrint_log_file(String print_log_file) {
+		this.print_log_file = print_log_file;
+	}
+
+	
 
 }

@@ -131,62 +131,42 @@ public class TransH extends EmbeddingModel{
 		
 		if(truesimi+margin-falsesimi>0)
 		{
-			double wsum=0.;
-			double whsum=0.;
-			double wtsum=0.;
-			for(int i=0;i<truevector.length;i++)
-			{
-				wsum+=relationweight[triplet[1]][i];
-				whsum+=relationweight[triplet[1]][i]*entityEmbedding[triplet[0]][i];
-				wtsum+=relationweight[triplet[1]][i]*entityEmbedding[triplet[2]][i];
-			}
 			for(int i=0;i<truevector.length;i++)
 			{
 				if(truevector[i]>0)
 				{
-					entityGradient[triplet[0]][i]+=1-relationweight[triplet[1]][i]*wsum;
+					entityGradient[triplet[0]][i]+=1-relationweight[triplet[1]][i];
+					//System.out.println(entityGradient[triplet[0]][i]);
 					relationGradient[triplet[1]][i]+=1;
-					entityGradient[triplet[2]][i]+=relationweight[triplet[1]][i]*wsum-1;
-					relationweightGradient[triplet[1]][i]+=wtsum-whsum
-							+(entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i])*wsum;
+					//System.out.println(relationGradient[triplet[1]][i]);
+					entityGradient[triplet[2]][i]-=relationweight[triplet[1]][i]-1;
+					//System.out.println(entityGradient[triplet[2]][i]);					
+					relationweightGradient[triplet[1]][i]+=entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i];
+					//System.out.println(relationweightGradient[triplet[1]][i]);						
 				}
 				else
 				{
-					entityGradient[triplet[0]][i]-=1-relationweight[triplet[1]][i]*wsum;
+					entityGradient[triplet[0]][i]-=1-relationweight[triplet[1]][i];
 					relationGradient[triplet[1]][i]-=1;
-					entityGradient[triplet[2]][i]-=relationweight[triplet[1]][i]*wsum-1;
-					relationweightGradient[triplet[1]][i]-=wtsum-whsum
-							+(entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i])*wsum;
+					entityGradient[triplet[2]][i]+=relationweight[triplet[1]][i]-1;
+					relationweightGradient[triplet[1]][i]-=entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i];	
 				}
-			}
-			
-			
-			wsum=0.;
-			whsum=0.;
-			wtsum=0.;
-			for(int i=0;i<falsevector.length;i++)
-			{
-				wsum+=relationweight[ftriplet[1]][i];
-				whsum+=relationweight[ftriplet[1]][i]*entityEmbedding[ftriplet[0]][i];
-				wtsum+=relationweight[ftriplet[1]][i]*entityEmbedding[ftriplet[2]][i];
 			}
 			for(int i=0;i<falsevector.length;i++)
 			{
 				if(falsevector[i]<0)
 				{
-					entityGradient[ftriplet[0]][i]+=1-relationweight[ftriplet[1]][i]*wsum;
+					entityGradient[ftriplet[0]][i]+=1-relationweight[ftriplet[1]][i];
 					relationGradient[ftriplet[1]][i]+=1;
-					entityGradient[ftriplet[2]][i]+=relationweight[ftriplet[1]][i]*wsum-1;
-					relationweightGradient[ftriplet[1]][i]+=wtsum-whsum
-							+(entityEmbedding[ftriplet[2]][i]-entityEmbedding[ftriplet[0]][i])*wsum;
+					entityGradient[ftriplet[2]][i]-=relationweight[ftriplet[1]][i]-1;
+					relationweightGradient[ftriplet[1]][i]+=entityEmbedding[ftriplet[2]][i]-entityEmbedding[ftriplet[0]][i];
 				}
 				else
 				{
-					entityGradient[ftriplet[0]][i]-=1-relationweight[ftriplet[1]][i]*wsum;
+					entityGradient[ftriplet[0]][i]-=1-relationweight[ftriplet[1]][i];
 					relationGradient[ftriplet[1]][i]-=1;
-					entityGradient[ftriplet[2]][i]-=relationweight[ftriplet[1]][i]*wsum-1;
-					relationweightGradient[ftriplet[1]][i]-=wtsum-whsum
-							+(entityEmbedding[ftriplet[2]][i]-entityEmbedding[ftriplet[0]][i])*wsum;
+					entityGradient[ftriplet[2]][i]+=relationweight[ftriplet[1]][i]-1;
+					relationweightGradient[ftriplet[1]][i]-=entityEmbedding[ftriplet[2]][i]-entityEmbedding[ftriplet[0]][i];				
 				}
 			}			
 		}	
@@ -196,20 +176,10 @@ public class TransH extends EmbeddingModel{
 		double[] resvector=new double[entity_dim];		
 		double[] htran=new double[entity_dim];
 		double[] ttran=new double[entity_dim];
-		
-		double hs=0.;
-		double ts=0.;
 		for(int i=0;i<entity_dim;i++)
 		{
-			hs+=entityEmbedding[triplet[0]][i]*relationweight[triplet[1]][i];
-			ts+=entityEmbedding[triplet[2]][i]*relationweight[triplet[1]][i];
-		}
-		
-		
-		for(int i=0;i<entity_dim;i++)
-		{
-			htran[i]=entityEmbedding[triplet[0]][i]-hs*relationweight[triplet[1]][i];
-			ttran[i]=entityEmbedding[triplet[2]][i]-ts*relationweight[triplet[1]][i];
+			htran[i]=entityEmbedding[triplet[0]][i]*(1-relationweight[triplet[1]][i]);
+			ttran[i]=entityEmbedding[triplet[2]][i]*(1-relationweight[triplet[1]][i]);
 		}
 		for(int i=0;i<entity_dim;i++)
 		{
@@ -260,40 +230,22 @@ public class TransH extends EmbeddingModel{
 		RegularRelationWeight();
 		
 	}
-/*	private void RegularRelationWeight()
+	private void RegularRelationWeight()
 	{
 		for(int i=0;i<relationweight.length;i++)
 		{
 			double x=0.;
 			for(int j=0;j<relationweight[i].length;j++)
 			{
-				x+=Math.abs(relationweight[i][j]);
+				x+=relationweight[i][j];
 			}
-			//x/=relationweight[i].length;
-			x/=entity_dim;
-			if(x>1.)
-			{
-				for(int j=0;j<relationweight[i].length;j++)
-				{
-					relationweight[i][j]/=x;
-				}
-			}
-		}
-	}*/
-	private void RegularRelationWeight()
-	{
-		for(int i=0;i<relationweight.length;i++)
-		{
-			double x=MatrixTool.VectorNorm2(relationweight[i]);
-			if(x>0.5)
+			x/=relationweight[i].length;
 			for(int j=0;j<relationweight[i].length;j++)
 			{
-				relationweight[i][j]/=x;
+				relationweight[i][j]-=x;
 			}
 		}
-	}	
-	
-	
+	}
 
 	/////////////////for debug
 	@Override
@@ -318,25 +270,6 @@ public class TransH extends EmbeddingModel{
 				UpgradeGradients(embeddingList,gradientList,i);
 			}
 		}
-	}
-	
-	
-	@Override
-	public void SetBestParameter()
-	{
-		L1regular=false;
-		project=false;
-		trainprintable=true;	
-
-		Epoch=100;
-		minibranchsize=4800;
-		gamma=0.001;
-		margin=1.;
-		random_data_each_epoch=100000;
-		bern=false;
-		
-		lammadaL1=0.;
-		lammadaL2=0.;
 	}
 }
 

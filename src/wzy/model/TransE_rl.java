@@ -2,20 +2,20 @@ package wzy.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
 import wzy.io.FileTools;
-import wzy.meta.TripletHash;
+import wzy.model.EmbeddingModel;
 import wzy.model.para.SpecificParameter;
 import wzy.model.para.TransEParameter;
 import wzy.tool.MatrixTool;
 
-public class TransE extends EmbeddingModel {
-
-	private double[][] entityEmbedding;
+public class TransE_rl extends EmbeddingModel{
+	
+	private double[][] entityEmbedding_l;
+	private double[][] entityEmbedding_r;	
 	private double[][] relationEmbedding;
-	private double[][] entityGradient;
+	private double[][] entityGradient_l;
+	private double[][] entityGradient_r;	
 	private double[][] relationGradient;
 	private int entity_dim;
 	private int relation_dim;
@@ -24,68 +24,34 @@ public class TransE extends EmbeddingModel {
 	@Override
 	protected void InitEmbeddingsMemory()
 	{
-		entityEmbedding=new double[entityNum][entity_dim];
+		entityEmbedding_l=new double[entityNum][entity_dim];
+		entityEmbedding_r=new double[entityNum][entity_dim];		
 		relationEmbedding=new double[relationNum][relation_dim];
 	}
 	
 	@Override
 	public void InitEmbeddingsRandomly()
 	{
-		InitEmbeddingsMemory();
-		for(int i=0;i<entityNum;i++)
-		{
-			for(int j=0;j<entity_dim;j++)
-			{
-				entityEmbedding[i][j]=rand.nextDouble();
-				if(rand.nextDouble()<0.5)
-					entityEmbedding[i][j]=-entityEmbedding[i][j];
-			}
-			double x=MatrixTool.VectorNorm1(entityEmbedding[i]);
-			if(x>1)
-			{
-				for(int j=0;j<entity_dim;j++)
-				{
-					entityEmbedding[i][j]/=x;
-				}
-			}
-		}
-		for(int i=0;i<relationNum;i++)
-		{
-			for(int j=0;j<relation_dim;j++)
-			{
-				relationEmbedding[i][j]=rand.nextDouble();
-				if(rand.nextDouble()<0.5)
-					relationEmbedding[i][j]=-relationEmbedding[i][j];
-			}
-			double x=MatrixTool.VectorNorm1(relationEmbedding[i]);
-			if(x>1)
-			{
-				for(int j=0;j<relation_dim;j++)
-				{
-					relationEmbedding[i][j]/=x;
-				}
-			}
-		}		
+		//cannot be initialized randomly.
 	}
+	
+	@Override
+	public void InitEmbeddingFromFile(String filename)
+	{
+		InitEmbeddingsMemory();
+		List<Object> embeddingList=new ArrayList<Object>();
+		embeddingList.add(entityEmbedding_l);
+		embeddingList.add(relationEmbedding);
+		FileTools.ReadEmbeddingsFromFile(filename, embeddingList);
+		entityEmbedding_r=MatrixTool.CopyMatrix(entityEmbedding_l);
+	}
+	
 	@Override
 	protected void InitGradients()
 	{
-		entityGradient=new double[entityNum][entity_dim];
+		entityGradient_l=new double[entityNum][entity_dim];
+		entityGradient_r=new double[entityNum][entity_dim];		
 		relationGradient=new double[relationNum][relation_dim];
-		for(int i=0;i<entityGradient.length;i++)
-		{
-			for(int j=0;j<entityGradient[i].length;j++)
-			{
-				entityGradient[i][j]=0.;
-			}
-		}
-		for(int i=0;i<relationGradient.length;i++)
-		{
-			for(int j=0;j<relationGradient[i].length;j++)
-			{
-				relationGradient[i][j]=0.;
-			}
-		}
 	}
 	/**
 	 * L1 similarity
@@ -116,30 +82,30 @@ public class TransE extends EmbeddingModel {
 			{
 				if(truevector[i]>0)
 				{
-					entityGradient[triplet[0]][i]+=1;
+					entityGradient_l[triplet[0]][i]+=1;
 					relationGradient[triplet[1]][i]+=1;
-					entityGradient[triplet[2]][i]-=1;
+					entityGradient_r[triplet[2]][i]-=1;
 				}
 				else
 				{
-					entityGradient[triplet[0]][i]-=1;
+					entityGradient_l[triplet[0]][i]-=1;
 					relationGradient[triplet[1]][i]-=1;
-					entityGradient[triplet[2]][i]+=1;					
+					entityGradient_r[triplet[2]][i]+=1;					
 				}
 			}
 			for(int i=0;i<falsevector.length;i++)
 			{
 				if(falsevector[i]<0)
 				{
-					entityGradient[ftriplet[0]][i]+=1;
+					entityGradient_l[ftriplet[0]][i]+=1;
 					relationGradient[ftriplet[1]][i]+=1;
-					entityGradient[ftriplet[2]][i]-=1;
+					entityGradient_r[ftriplet[2]][i]-=1;
 				}
 				else
 				{
-					entityGradient[ftriplet[0]][i]-=1;
+					entityGradient_l[ftriplet[0]][i]-=1;
 					relationGradient[ftriplet[1]][i]-=1;
-					entityGradient[ftriplet[2]][i]+=1;					
+					entityGradient_r[ftriplet[2]][i]+=1;					
 				}
 			}			
 		}	
@@ -150,7 +116,7 @@ public class TransE extends EmbeddingModel {
 		double[] resvector=new double[entity_dim];
 		for(int i=0;i<entity_dim;i++)
 		{
-			resvector[i]=entityEmbedding[triplet[0]][i]+relationEmbedding[triplet[1]][i]-entityEmbedding[triplet[2]][i];
+			resvector[i]=entityEmbedding_l[triplet[0]][i]+relationEmbedding[triplet[1]][i]-entityEmbedding_r[triplet[2]][i];
 		}	
 		return resvector;
 	}
@@ -158,14 +124,16 @@ public class TransE extends EmbeddingModel {
 	protected List<Object> ListingEmbedding()
 	{
 		List<Object> embListing=new ArrayList<Object>();
-		embListing.add(entityEmbedding);
+		embListing.add(entityEmbedding_l);
+		embListing.add(entityEmbedding_r);		
 		embListing.add(relationEmbedding);
 		return embListing;
 	}
 	protected List<Object> ListingGradient()
 	{
 		List<Object> graListing=new ArrayList<Object>();
-		graListing.add(entityGradient);
+		graListing.add(entityGradient_l);
+		graListing.add(entityGradient_r);		
 		graListing.add(relationGradient);
 		return graListing;
 	}
@@ -201,9 +169,10 @@ public class TransE extends EmbeddingModel {
 	@Override
 	protected void RegularEmbedding(int[][] train_triplets,int sindex,int eindex)
 	{
-		double[][][] embeddings=new double[2][][];
-		embeddings[0]=entityEmbedding;
-		embeddings[1]=relationEmbedding;
+		double[][][] embeddings=new double[3][][];
+		embeddings[0]=entityEmbedding_l;
+		embeddings[1]=entityEmbedding_r;		
+		embeddings[2]=relationEmbedding;
 		for(int i=0;i<embeddings.length;i++)
 		{
 			for(int j=0;j<embeddings[i].length;j++)

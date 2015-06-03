@@ -257,4 +257,29 @@ public class FileTools {
 		}
 		return true;
 	}
+	
+	public static void PrintFinalResult(String filename,long time,int raw_hit10l,int raw_meanl,int filter_hit10l,
+			int filter_meanl,int raw_hit10r,int raw_meanr,int filter_hit10r,int filter_meanr,int test_triplets_length)
+	{
+		try {
+			PrintStream ps=new PrintStream(filename);
+			ps.println("Testing is end at "+time+"s. Final testing result:");
+			ps.println("Left:\t"+(double)raw_hit10l/test_triplets_length
+					+"\t"+(double)raw_meanl/test_triplets_length
+					+"\t"+(double)filter_hit10l/test_triplets_length
+					+"\t"+(double)filter_meanl/test_triplets_length);
+			ps.println("Right:\t"+(double)raw_hit10r/test_triplets_length
+					+"\t"+(double)raw_meanr/test_triplets_length
+					+"\t"+(double)filter_hit10r/test_triplets_length
+					+"\t"+(double)filter_meanr/test_triplets_length);		
+			ps.println("Final:\t"+(double)(raw_hit10l+raw_hit10r)/test_triplets_length/2.
+					+"\t"+(double)(raw_meanl+raw_meanr)/test_triplets_length/2.
+					+"\t"+(double)(filter_hit10l+filter_hit10r)/test_triplets_length/2.
+					+"\t"+(double)(filter_meanl+filter_meanr)/test_triplets_length/2.);
+			ps.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 }

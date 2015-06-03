@@ -2,17 +2,12 @@ package wzy.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
-import wzy.io.FileTools;
-import wzy.meta.TripletHash;
 import wzy.model.para.SpecificParameter;
 import wzy.model.para.TransEParameter;
 import wzy.tool.MatrixTool;
 
-public class TransE extends EmbeddingModel {
-
+public class RevTransE extends EmbeddingModel{
 	private double[][] entityEmbedding;
 	private double[][] relationEmbedding;
 	private double[][] entityGradient;
@@ -110,11 +105,11 @@ public class TransE extends EmbeddingModel {
 		double truesimi=MatrixTool.VectorNorm1(truevector);
 		double falsesimi=MatrixTool.VectorNorm1(falsevector);
 		
-		if(truesimi+margin-falsesimi>0)
+		if(falsesimi+margin-truesimi>0)
 		{
 			for(int i=0;i<truevector.length;i++)
 			{
-				if(truevector[i]>0)
+				if(truevector[i]<0)
 				{
 					entityGradient[triplet[0]][i]+=1;
 					relationGradient[triplet[1]][i]+=1;
@@ -129,7 +124,7 @@ public class TransE extends EmbeddingModel {
 			}
 			for(int i=0;i<falsevector.length;i++)
 			{
-				if(falsevector[i]<0)
+				if(falsevector[i]>0)
 				{
 					entityGradient[ftriplet[0]][i]+=1;
 					relationGradient[ftriplet[1]][i]+=1;

@@ -2,17 +2,14 @@ package wzy.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
-import wzy.io.FileTools;
-import wzy.meta.TripletHash;
 import wzy.model.para.SpecificParameter;
 import wzy.model.para.TransEParameter;
 import wzy.tool.MatrixTool;
 
-public class TransE extends EmbeddingModel {
+public class TransF_JF extends EmbeddingModel{
 
+	
 	private double[][] entityEmbedding;
 	private double[][] relationEmbedding;
 	private double[][] entityGradient;
@@ -72,20 +69,6 @@ public class TransE extends EmbeddingModel {
 	{
 		entityGradient=new double[entityNum][entity_dim];
 		relationGradient=new double[relationNum][relation_dim];
-		for(int i=0;i<entityGradient.length;i++)
-		{
-			for(int j=0;j<entityGradient[i].length;j++)
-			{
-				entityGradient[i][j]=0.;
-			}
-		}
-		for(int i=0;i<relationGradient.length;i++)
-		{
-			for(int j=0;j<relationGradient[i].length;j++)
-			{
-				relationGradient[i][j]=0.;
-			}
-		}
 	}
 	/**
 	 * L1 similarity
@@ -93,8 +76,19 @@ public class TransE extends EmbeddingModel {
 	@Override
 	public double CalculateSimilarity(int[] triplet)
 	{
-		double[] resvector=CalculateTripletVector(triplet);
-		return MatrixTool.VectorNorm1(resvector);
+
+		double sum=0.;
+		for(int i=0;i<entity_dim;i++)
+		{
+			sum+=entityEmbedding[triplet[0]][i]*entityEmbedding[triplet[2]][i];
+		}
+		sum*=2.;
+		for(int i=0;i<entity_dim;i++)
+		{
+			sum+=relationEmbedding[triplet[1]][i]*(entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i]);
+		}
+		
+		return -sum;
 	}
 	
 	
@@ -105,54 +99,27 @@ public class TransE extends EmbeddingModel {
 	protected void CalculateGradient(int[] triplet)
 	{
 		int[] ftriplet=GenerateFalseTriplet(triplet);
-		double[] truevector=CalculateTripletVector(triplet);
-		double[] falsevector=CalculateTripletVector(ftriplet);
-		double truesimi=MatrixTool.VectorNorm1(truevector);
-		double falsesimi=MatrixTool.VectorNorm1(falsevector);
+
+		double truesimi=CalculateSimilarity(triplet);
+		double falsesimi=CalculateSimilarity(ftriplet);
 		
+
 		if(truesimi+margin-falsesimi>0)
 		{
-			for(int i=0;i<truevector.length;i++)
+			for(int i=0;i<entity_dim;i++)
 			{
-				if(truevector[i]>0)
-				{
-					entityGradient[triplet[0]][i]+=1;
-					relationGradient[triplet[1]][i]+=1;
-					entityGradient[triplet[2]][i]-=1;
-				}
-				else
-				{
-					entityGradient[triplet[0]][i]-=1;
-					relationGradient[triplet[1]][i]-=1;
-					entityGradient[triplet[2]][i]+=1;					
-				}
+				entityGradient[triplet[0]][i]-=2*entityEmbedding[triplet[2]][i]-relationEmbedding[triplet[1]][i];
+				relationGradient[triplet[1]][i]-=entityEmbedding[triplet[2]][i]-entityEmbedding[triplet[0]][i];
+				entityGradient[triplet[2]][i]-=2*entityEmbedding[triplet[0]][i]+relationEmbedding[triplet[1]][i];
+				
+				entityGradient[ftriplet[0]][i]+=2*entityEmbedding[ftriplet[2]][i]-relationEmbedding[ftriplet[1]][i];
+				relationGradient[ftriplet[1]][i]+=entityEmbedding[ftriplet[2]][i]-entityEmbedding[ftriplet[0]][i];
+				entityGradient[ftriplet[2]][i]+=2*entityEmbedding[ftriplet[0]][i]+relationEmbedding[ftriplet[1]][i];				
+				
 			}
-			for(int i=0;i<falsevector.length;i++)
-			{
-				if(falsevector[i]<0)
-				{
-					entityGradient[ftriplet[0]][i]+=1;
-					relationGradient[ftriplet[1]][i]+=1;
-					entityGradient[ftriplet[2]][i]-=1;
-				}
-				else
-				{
-					entityGradient[ftriplet[0]][i]-=1;
-					relationGradient[ftriplet[1]][i]-=1;
-					entityGradient[ftriplet[2]][i]+=1;					
-				}
-			}			
-		}	
-	}
-	private double[] CalculateTripletVector(int[] triplet)
-	{
 		
-		double[] resvector=new double[entity_dim];
-		for(int i=0;i<entity_dim;i++)
-		{
-			resvector[i]=entityEmbedding[triplet[0]][i]+relationEmbedding[triplet[1]][i]-entityEmbedding[triplet[2]][i];
 		}	
-		return resvector;
+
 	}
 	
 	protected List<Object> ListingEmbedding()
@@ -184,18 +151,18 @@ public class TransE extends EmbeddingModel {
 	public void SetBestParameter()
 	{
 		L1regular=false;
-		project=true;
+		project=false;//true;
 		trainprintable=true;	
 
 		Epoch=1000;
-		minibranchsize=4800;
+		minibranchsize=1440;
 		gamma=0.001;
-		margin=1.;
+		margin=0.25;
 		random_data_each_epoch=100000;
 		bern=false;
 		
 		lammadaL1=0.;
-		lammadaL2=0.;
+		lammadaL2=5;
 	}
 	
 	@Override
@@ -209,14 +176,16 @@ public class TransE extends EmbeddingModel {
 			for(int j=0;j<embeddings[i].length;j++)
 			{
 				double x=MatrixTool.VectorNorm2(embeddings[i][j]);
-				if(x>0.1)
+				for(int k=0;k<embeddings[i][j].length;k++)
 				{
-					for(int k=0;k<embeddings[i][j].length;k++)
-					{
-						embeddings[i][j][k]/=x;
-					}
+					//embeddings[i][j][k]-=lammadaL2*gamma*2*embeddings[i][j][k];
+					embeddings[i][j][k]/=x;
 				}
 			}
 		}
+		
+		
+		
 	}
+	
 }
