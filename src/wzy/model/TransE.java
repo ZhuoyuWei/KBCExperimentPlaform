@@ -29,7 +29,7 @@ public class TransE extends EmbeddingModel {
 	}
 	
 	@Override
-	public void InitEmbeddingsRandomly()
+	public void InitEmbeddingsRandomly(int[][] triplets)
 	{
 		InitEmbeddingsMemory();
 		for(int i=0;i<entityNum;i++)

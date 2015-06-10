@@ -35,7 +35,7 @@ public class EmbeddingModel {
 	
 	protected boolean L1regular=false;
 	protected boolean project=true;//false;
-	protected boolean trainprintable=true;	
+	protected boolean trainprintable=false;//true;	
 	protected Random rand=new Random();	
 	
 	protected int Epoch=100;
@@ -128,6 +128,10 @@ public class EmbeddingModel {
 				lastvalid_pair_err=valid_pair_err;
 				
 			}
+			else
+			{
+				System.err.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s");
+			}
 			
 			if(printMiddleModel_dir!=null)
 			{
@@ -147,7 +151,7 @@ public class EmbeddingModel {
 	 * and different methods of initializing
 	 * @need Override
 	 */
-	public void InitEmbeddingsRandomly()
+	public void InitEmbeddingsRandomly(int[][] triplets)
 	{}
 	
 	protected void InitEmbeddingsMemory()
@@ -632,7 +636,7 @@ public class EmbeddingModel {
 		return r;
 	}
 	/**
-	 * Form a set of all true tirplets in train and validate set.
+	 * Form a set of all true triplets in train and validate set.
 	 * It is useful in testing or other functions.
 	 * @param train_triplets
 	 * @param valid_triplets

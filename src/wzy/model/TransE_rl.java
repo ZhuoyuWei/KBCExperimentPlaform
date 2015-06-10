@@ -30,7 +30,7 @@ public class TransE_rl extends EmbeddingModel{
 	}
 	
 	@Override
-	public void InitEmbeddingsRandomly()
+	public void InitEmbeddingsRandomly(int[][] triplets)
 	{
 		//cannot be initialized randomly.
 	}

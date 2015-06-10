@@ -44,13 +44,18 @@ public class KBCProcess implements Callable{
 			em.setPrintMiddleModel_dir(printMiddleModel_dir);
 			FileTools.makeDir(printMiddleModel_dir);
 		}
-		//em.SetBestParameter();
+		em.SetBestParameter();
 		if(this.embedding_init_file!=null)
 			em.InitEmbeddingFromFile(embedding_init_file);
 		else
-			em.InitEmbeddingsRandomly();
+			em.InitEmbeddingsRandomly(train_triplets);
 		em.CountEntityForRelation(train_triplets);
 		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
+		
+		if(!quiet)
+		{
+			System.err.println("Train process is starting.");
+		}
 		em.Training(train_triplets, validate_triplets);
 		if(print_model_file!=null)
 			em.PrintModel(print_model_file);

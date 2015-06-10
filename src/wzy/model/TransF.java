@@ -39,9 +39,10 @@ public class TransF extends EmbeddingModel {
 	}
 	
 	@Override
-	public void InitEmbeddingsRandomly()
+	public void InitEmbeddingsRandomly(int[][] triplets)
 	{
 		InitEmbeddingsMemory();
+
 		for(int i=0;i<entityNum;i++)
 		{
 			for(int j=0;j<entity_dim;j++)
@@ -82,26 +83,13 @@ public class TransF extends EmbeddingModel {
 		{
 			tripletGraph[i]=new ArrayList<int[]>();
 		}
+		InsertIntoGraph(triplets);
 	}
 	@Override
 	protected void InitGradients()
 	{
 		entityGradient=new double[entityNum][entity_dim];
 		relationGradient=new double[relationNum][relation_dim];
-		for(int i=0;i<entityGradient.length;i++)
-		{
-			for(int j=0;j<entityGradient[i].length;j++)
-			{
-				entityGradient[i][j]=0.;
-			}
-		}
-		for(int i=0;i<relationGradient.length;i++)
-		{
-			for(int j=0;j<relationGradient[i].length;j++)
-			{
-				relationGradient[i][j]=0.;
-			}
-		}
 	}
 	/**
 	 * L1 similarity
@@ -123,7 +111,7 @@ public class TransF extends EmbeddingModel {
 	private double[] FeatureRepresentEntity(int entity)
 	{
 		double[] res=new double[entity_dim];
-		List<int[]> featureList=tripletGraph[entity_dim];
+		List<int[]> featureList=tripletGraph[entity];
 		if(featureList.size()==0)
 			return res;
 		for(int i=0;i<featureList.size();i++)
@@ -323,7 +311,7 @@ public class TransF extends EmbeddingModel {
 	{
 		L1regular=false;
 		project=true;
-		trainprintable=true;	
+		trainprintable=false;//true;	
 
 		Epoch=1000;
 		minibranchsize=4800;
@@ -340,6 +328,7 @@ public class TransF extends EmbeddingModel {
 	protected void PreTesting(int[][] test_triplets)
 	{
 		TransformEntityEmbedding();
+		this.trainOrTest=false;
 	}
 	
 	
