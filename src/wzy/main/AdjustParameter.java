@@ -10,6 +10,7 @@ import wzy.io.FileTools;
 import wzy.model.NoTrans;
 import wzy.model.NoTransS;
 import wzy.model.TransE;
+import wzy.model.TransEAndPathModel;
 import wzy.model.TransF;
 import wzy.model.TransF_JF;
 import wzy.model.TransH;
@@ -24,7 +25,9 @@ public class AdjustParameter {
 	public static void main(String[] args)
 	{
 		String dir=args[0];
-		FileTools.makeDir(dir+"/adjust_parameter");
+		//String dir="F:\\emnlp2015\\fb15k\\FB15k\\";
+		
+		FileTools.makeDir(dir+"adjust_parameter");
 		
 		//Read Three DB Files
 		KBCProcess readdataProcess=new KBCProcess();
@@ -32,7 +35,7 @@ public class AdjustParameter {
 				, dir+"liuzhiyuan.valid.txt"
 				, dir+"liuzhiyuan.test.txt"
 				, "\t");
-		
+		double[] L2norms={0.1,1,10};
 		double[] gammas={1e-1,1e-2,1e-3,1e-4};
 		double[] margins={1,0.5,0.25,0.125};
 		//int[]  minibanchs={1440,2400,4800,9600};
@@ -52,24 +55,29 @@ public class AdjustParameter {
 			{
 				for(int k=0;k<gammas.length;k++)
 				{
-					String kbc_output_dir=dir+"/adjust_parameter/"+minibanchs[i]+"_"+margins[j]+"_"+gammas[k];
-					FileTools.makeDir(kbc_output_dir);
-					KBCProcess kbc_tester=new KBCProcess();
-					//kbc_tester.setEmbedding_init_file(initembeddingfile);
-					kbc_tester.CopyThreeDataSets(readdataProcess);
-					kbc_tester.setEm(new NoTrans());
-					kbc_tester.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(50,50));
+					for(int h=0;h<L2norms.length;h++)
+					{
+						String kbc_output_dir=dir+"/adjust_parameter/"+minibanchs[i]+"_"+margins[j]+"_"+gammas[k]+"_"+L2norms[h];
+						FileTools.makeDir(kbc_output_dir);
+						KBCProcess kbc_tester=new KBCProcess();
+						kbc_tester.setEmbedding_init_file(dir+"embedding.model");
+						kbc_tester.setPath_structure_file(dir+"formulas_length2");
+						kbc_tester.CopyThreeDataSets(readdataProcess);
+						kbc_tester.setEm(new TransEAndPathModel());
+						kbc_tester.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(50,50));
 					
-					//kbc_tester
-					kbc_tester.SetMiniBranch(minibanchs[i]);
-					kbc_tester.SetMargin(margins[j]);
-					kbc_tester.SetGamma(gammas[k]);
-					kbc_tester.setQuiet(true);
+						//kbc_tester
+						kbc_tester.SetMiniBranch(minibanchs[i]);
+						kbc_tester.SetMargin(margins[j]);
+						kbc_tester.SetGamma(gammas[k]);
+						kbc_tester.getEm().setLammadaL2(L2norms[h]);
+						kbc_tester.setQuiet(true);
 					
-					kbc_tester.setPrint_log_file(kbc_output_dir+"/result.log");
-					//kbc_tester.setPrint_model_file(kbc_output_dir+"/embedding.model");
-					//kbc_tester.setPrintMiddleModel_dir(kbc_output_dir+"/middleModel");
-					alThreads.add(kbc_tester);
+						kbc_tester.setPrint_log_file(kbc_output_dir+"/result.log");
+						//kbc_tester.setPrint_model_file(kbc_output_dir+"/embedding.model");
+						//kbc_tester.setPrintMiddleModel_dir(kbc_output_dir+"/middleModel");
+						alThreads.add(kbc_tester);
+					}
 				}
 			}
 		}

@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import wzy.io.FileTools;
+import wzy.io.busi.ReadTriplets;
 import wzy.model.*;
 import wzy.model.para.SpecificParameter;
 
@@ -17,6 +18,7 @@ public class KBCProcess implements Callable{
 	private String print_log_file=null;
 	private String printMiddleModel_dir=null;
 	private String embedding_init_file=null;
+	private String path_structure_file=null;
 	
 	private int[][] train_triplets;
 	private int[][] validate_triplets;
@@ -44,11 +46,15 @@ public class KBCProcess implements Callable{
 			em.setPrintMiddleModel_dir(printMiddleModel_dir);
 			FileTools.makeDir(printMiddleModel_dir);
 		}
-		em.SetBestParameter();
+		//em.SetBestParameter();
+		
+		if(this.path_structure_file!=null)
+			em.InitPathFromFile(path_structure_file);
 		if(this.embedding_init_file!=null)
 			em.InitEmbeddingFromFile(embedding_init_file);
 		else
 			em.InitEmbeddingsRandomly(train_triplets);
+
 		em.CountEntityForRelation(train_triplets);
 		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
 		
@@ -65,34 +71,6 @@ public class KBCProcess implements Callable{
 	
 	
 	/**
-	 * Read triplets from a file.
-	 * @param filename
-	 * @param separator
-	 * @return
-	 */
-	public int[][] ReadTripletsFromFile(String filename,String separator)
-	{
-		return FileTools.ReadIntegralTriplets(filename, separator);
-	}
-	/**
-	 * copy one data set from other data set in memory.
-	 * @param triplets
-	 * @return
-	 */
-	public int[][] ReadTripletsFromTriplets(int[][] triplets)
-	{
-		int[][] res=new int[triplets.length][triplets[0].length];
-		for(int i=0;i<triplets.length;i++)
-		{
-			for(int j=0;j<triplets[i].length;j++)
-			{
-				res[i][j]=triplets[i][j];
-			}
-		}
-		return res;
-	}
-	
-	/**
 	 * Read train, validate, test data sets from three files.
 	 * @param trainfile
 	 * @param validfile
@@ -101,9 +79,9 @@ public class KBCProcess implements Callable{
 	 */
 	public void SetThreeTriplets(String trainfile,String validfile,String testfile,String separator)
 	{
-		train_triplets=ReadTripletsFromFile(trainfile,separator);
-		validate_triplets=ReadTripletsFromFile(validfile,separator);
-		test_triplets=ReadTripletsFromFile(testfile,separator);
+		train_triplets=ReadTriplets.ReadTripletsFromFile(trainfile,separator);
+		validate_triplets=ReadTriplets.ReadTripletsFromFile(validfile,separator);
+		test_triplets=ReadTriplets.ReadTripletsFromFile(testfile,separator);
 	}	
 	
 	/**
@@ -112,9 +90,9 @@ public class KBCProcess implements Callable{
 	 */
 	public void CopyThreeDataSets(KBCProcess kbc)
 	{
-		train_triplets=ReadTripletsFromTriplets(kbc.getTrain_triplets());
-		validate_triplets=ReadTripletsFromTriplets(kbc.getValidate_triplets());		
-		test_triplets=ReadTripletsFromTriplets(kbc.getTest_triplets());		
+		train_triplets=ReadTriplets.ReadTripletsFromTriplets(kbc.getTrain_triplets());
+		validate_triplets=ReadTriplets.ReadTripletsFromTriplets(kbc.getValidate_triplets());		
+		test_triplets=ReadTriplets.ReadTripletsFromTriplets(kbc.getTest_triplets());		
 	}
 	
 	/**
@@ -318,6 +296,14 @@ public class KBCProcess implements Callable{
 	public void setQuiet(boolean quiet) {
 		this.quiet = quiet;
 		em.setQuiet(quiet);
+	}
+
+	public String getPath_structure_file() {
+		return path_structure_file;
+	}
+
+	public void setPath_structure_file(String path_structure_file) {
+		this.path_structure_file = path_structure_file;
 	}
 
 

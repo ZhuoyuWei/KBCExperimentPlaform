@@ -102,39 +102,39 @@ public class RevTransE extends EmbeddingModel{
 		int[] ftriplet=GenerateFalseTriplet(triplet);
 		double[] truevector=CalculateTripletVector(triplet);
 		double[] falsevector=CalculateTripletVector(ftriplet);
-		double truesimi=MatrixTool.VectorNorm1(truevector);
-		double falsesimi=MatrixTool.VectorNorm1(falsevector);
+		double truesimi=-MatrixTool.VectorNorm1(truevector);
+		double falsesimi=-MatrixTool.VectorNorm1(falsevector);
 		
-		if(falsesimi+margin-truesimi>0)
+		if(truesimi+margin-falsesimi>0)
 		{
 			for(int i=0;i<truevector.length;i++)
 			{
 				if(truevector[i]<0)
 				{
-					entityGradient[triplet[0]][i]+=1;
-					relationGradient[triplet[1]][i]+=1;
-					entityGradient[triplet[2]][i]-=1;
+					entityGradient[triplet[0]][i]-=1;
+					relationGradient[triplet[1]][i]-=1;
+					entityGradient[triplet[2]][i]+=1;
 				}
 				else
 				{
-					entityGradient[triplet[0]][i]-=1;
-					relationGradient[triplet[1]][i]-=1;
-					entityGradient[triplet[2]][i]+=1;					
+					entityGradient[triplet[0]][i]+=1;
+					relationGradient[triplet[1]][i]+=1;
+					entityGradient[triplet[2]][i]-=1;					
 				}
 			}
 			for(int i=0;i<falsevector.length;i++)
 			{
 				if(falsevector[i]>0)
 				{
-					entityGradient[ftriplet[0]][i]+=1;
-					relationGradient[ftriplet[1]][i]+=1;
-					entityGradient[ftriplet[2]][i]-=1;
+					entityGradient[ftriplet[0]][i]-=1;
+					relationGradient[ftriplet[1]][i]-=1;
+					entityGradient[ftriplet[2]][i]+=1;
 				}
 				else
 				{
-					entityGradient[ftriplet[0]][i]-=1;
-					relationGradient[ftriplet[1]][i]-=1;
-					entityGradient[ftriplet[2]][i]+=1;					
+					entityGradient[ftriplet[0]][i]+=1;
+					relationGradient[ftriplet[1]][i]+=1;
+					entityGradient[ftriplet[2]][i]-=1;					
 				}
 			}			
 		}	

@@ -9,6 +9,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import wzy.meta.PathSupport;
+import wzy.meta.RPath;
+
 public class FileTools {
 
 	
@@ -282,4 +285,87 @@ public class FileTools {
 			e.printStackTrace();
 		}
 	}
+	
+	public static void PrintPaths(List<PathSupport> pathList,PrintStream ps)
+	{
+		for(int i=0;i<pathList.size();i++)
+		{
+			List<Integer> relationList=pathList.get(i).getPath().getRelationList();
+			for(int j=0;j<relationList.size();j++)
+			{
+				ps.print(relationList.get(j)+"\t");
+			}
+			ps.println();
+		}
+	}
+	public static void PrintPathsAndCount(List<PathSupport> pathList,PrintStream ps)
+	{
+		for(int i=0;i<pathList.size();i++)
+		{
+			PathSupport psupport=pathList.get(i);
+			List<Integer> relationList=pathList.get(i).getPath().getRelationList();
+			for(int j=0;j<relationList.size();j++)
+			{
+				ps.print(relationList.get(j)+"_"+psupport.getCount()+"\t");
+			}
+			ps.println();
+		}
+	}	
+	
+	public static void PrintAllFormula(List<PathSupport>[] pathLL,String filename,boolean printcount)
+	{
+		try {
+			PrintStream ps=new PrintStream(filename);
+			for(int i=0;i<pathLL.length;i++)
+			{
+				ps.println(i+"\t"+pathLL[i].size());
+				if(printcount)
+					PrintPathsAndCount(pathLL[i],ps);
+				else
+					PrintPaths(pathLL[i],ps);
+			}
+			ps.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public static RPath[][] ReadFormulasForRelations(String filename,int relNum)
+	{
+		RPath[][] rpathLists=null;
+		try {
+			rpathLists=new RPath[relNum][];
+			BufferedReader br=new  BufferedReader(new FileReader(filename));
+			String buffer=null;
+			while((buffer=br.readLine())!=null)
+			{
+				if(buffer.length()<2)
+					continue;
+				String[] ss=buffer.split("\t");
+				int relation=Integer.parseInt(ss[0]);
+				int pcount=Integer.parseInt(ss[1]);
+				rpathLists[relation]=new RPath[pcount];
+				for(int i=0;i<pcount;i++)
+				{
+					rpathLists[relation][i]=new RPath();
+					
+					String line=br.readLine();
+					String[] rels=line.split("\t");
+					for(int j=0;j<rels.length;j++)
+					{
+						rpathLists[relation][i].Add(Integer.parseInt(rels[j]));
+					}
+				}
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return rpathLists;
+	}
+	
 }

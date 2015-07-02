@@ -49,6 +49,11 @@
         <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
         <antcall target="build"/>
     </target>
+    <target name="AdjustParameter">
+        <java classname="wzy.main.AdjustParameter" failonerror="true" fork="yes">
+            <classpath refid="KBCExperimentPlaform.classpath"/>
+        </java>
+    </target>
     <target name="IndexEntityAndRelation">
         <java classname="wzy.main.IndexEntityAndRelation" failonerror="true" fork="yes">
             <classpath refid="KBCExperimentPlaform.classpath"/>
@@ -56,6 +61,16 @@
     </target>
     <target name="LinkPrediction">
         <java classname="wzy.main.LinkPrediction" failonerror="true" fork="yes">
+            <classpath refid="KBCExperimentPlaform.classpath"/>
+        </java>
+    </target>
+    <target name="MergeDataSet">
+        <java classname="proc.MergeDataSet" failonerror="true" fork="yes">
+            <classpath refid="KBCExperimentPlaform.classpath"/>
+        </java>
+    </target>
+    <target name="ProduceRanomForTransR">
+        <java classname="test.ProduceRanomForTransR" failonerror="true" fork="yes">
             <classpath refid="KBCExperimentPlaform.classpath"/>
         </java>
     </target>
@@ -69,18 +84,8 @@
             <classpath refid="KBCExperimentPlaform.classpath"/>
         </java>
     </target>
-    <target name="ProduceRanomForTransR">
-        <java classname="test.ProduceRanomForTransR" failonerror="true" fork="yes">
-            <classpath refid="KBCExperimentPlaform.classpath"/>
-        </java>
-    </target>
-    <target name="AdjustParameter">
-        <java classname="wzy.main.AdjustParameter" failonerror="true" fork="yes">
-            <classpath refid="KBCExperimentPlaform.classpath"/>
-        </java>
-    </target>
-    <target name="MergeDataSet">
-        <java classname="proc.MergeDataSet" failonerror="true" fork="yes">
+    <target name="MiningFomrulaStructures">
+        <java classname="wzy.main.MiningFomrulaStructures" failonerror="true" fork="yes">
             <classpath refid="KBCExperimentPlaform.classpath"/>
         </java>
     </target>

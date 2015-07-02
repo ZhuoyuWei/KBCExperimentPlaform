@@ -34,11 +34,11 @@ public class EmbeddingModel {
 	//protected double[][] entity_embedding
 	
 	protected boolean L1regular=false;
-	protected boolean project=true;//false;
+	protected boolean project=false;
 	protected boolean trainprintable=false;//true;	
 	protected Random rand=new Random();	
 	
-	protected int Epoch=100;
+	protected int Epoch=1000;
 	protected int minibranchsize=4800;
 	protected double gamma=0.01;
 	protected double margin=1.;
@@ -47,7 +47,7 @@ public class EmbeddingModel {
 	protected Set<TripletHash> filteringSet; 
 	
 	protected double lammadaL1=0.;
-	protected double lammadaL2=0.;
+	protected double lammadaL2=0;
 	
 	protected int entityNum;
 	protected int relationNum;
@@ -158,6 +158,8 @@ public class EmbeddingModel {
 	{}
 	
 	public void InitEmbeddingFromFile(String filename)
+	{}
+	public void InitPathFromFile(String filename)
 	{}
 	
 	public void CountEntityForRelation(int[][] train_triplets)
@@ -622,6 +624,12 @@ public class EmbeddingModel {
 					filter_hit10r, filter_meanr, test_triplets.length);
 		}
 	}
+	
+	/**
+	 * Just for methods who have paths, and embedding paths like relations.
+	 */
+	public void Testing_PathEmbedding(int[][] test_triplets)
+	{}
 	
 	public void Testing_Classify(int[] test_triplets)
 	{
