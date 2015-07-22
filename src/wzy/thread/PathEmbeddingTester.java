@@ -1,5 +1,7 @@
 package wzy.thread;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,7 +28,8 @@ public class PathEmbeddingTester {
 	private double[][] entityEmbedding;
 	
 	
-	private String pathtester_log_file;
+	private String pathtester_log_file=null;
+	private PrintStream pslog=null;
 	
 	public void Init()
 	{
@@ -37,6 +40,15 @@ public class PathEmbeddingTester {
 		triplet_graph=cf.getTriplet_graph();
 		entityEmbedding=tem.getEntityEmbedding();
 		
+		if(pathtester_log_file!=null)
+		{
+			try {
+				pslog=new PrintStream(pathtester_log_file);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		
 		SortTripletGraph();
 		
@@ -74,17 +86,30 @@ public class PathEmbeddingTester {
 			for(int j=0;j<rpathLists[r].length;j++)
 			{	
 				double[] simi=new double[relationTriplets[r].length];
-				boolean[] flags=new boolean[relationTriplets[r].length];
+				//boolean[] flags=new boolean[relationTriplets[r].length];
+				int[] pathcounts=new int[relationTriplets[r].length];
 				
 				for(int i=0;i<relationTriplets[r].length;i++)
 				{
 					List<Integer> stack=new ArrayList();
 					stack.add(relationTriplets[r][i][0]);
 					int count=DFScount(relationTriplets[r][i][2],stack,rpathLists[r][j]);
-					flags[i]=count>0;
+					pathcounts[i]=count;
 					simi[i]=CalculateSimilarity(entityEmbedding[relationTriplets[r][i][0]],
 							pathEmbedding[r][j],entityEmbedding[relationTriplets[r][i][2]]);
 				}
+				
+				if(pslog!=null)
+				{
+					pslog.println(r+"\t"+relationTriplets[r].length);
+					for(int i=0;i<simi.length;i++)
+					{
+						pslog.print(String.format("%.6f", simi[i]));
+						pslog.print("/"+pathcounts[i]+"\t");
+					}
+					pslog.println();
+				}
+				
 			}
 		}
 	}
@@ -126,6 +151,8 @@ public class PathEmbeddingTester {
 				{
 					if(edges[findr][0]>rpath.GetElement(l))
 						break;
+					if(CheckVisited(edges[findr][1],stack))
+						continue;
 					stack.add(edges[findr][1]);
 					if(stack.size()>rpath.length())
 					{
@@ -158,6 +185,36 @@ public class PathEmbeddingTester {
 			Collections.sort(tupleList,new IntListSorter());
 			triplet_graph[i]=tupleList.toArray(new int[0][]);
 		}
+	}
+
+
+	public EmbeddingModel getEm() {
+		return em;
+	}
+
+
+	public void setEm(EmbeddingModel em) {
+		this.em = em;
+	}
+
+
+	public ConstructFormulas getCf() {
+		return cf;
+	}
+
+
+	public void setCf(ConstructFormulas cf) {
+		this.cf = cf;
+	}
+
+
+	public String getPathtester_log_file() {
+		return pathtester_log_file;
+	}
+
+
+	public void setPathtester_log_file(String pathtester_log_file) {
+		this.pathtester_log_file = pathtester_log_file;
 	}
 
 	

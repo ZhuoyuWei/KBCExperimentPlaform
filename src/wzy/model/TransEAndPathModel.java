@@ -86,7 +86,7 @@ public class TransEAndPathModel extends EmbeddingModel{
 		embeddingList.add(entityEmbedding);
 		embeddingList.add(relationEmbedding);
 		FileTools.ReadEmbeddingsFromFile(filename, embeddingList);
-		
+		CalculatePathEmbedding();
 		//Init path weights
 		/*for(int i=0;i<pathWeights.length;i++)
 		{
