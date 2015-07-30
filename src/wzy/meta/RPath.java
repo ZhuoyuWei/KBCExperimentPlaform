@@ -47,6 +47,15 @@ public class RPath {
 		rpath.relationList.addAll(relationList);
 		return rpath;
 	}
+	
+	public void CopyFromStack(int[] stack,int stacksize)
+	{
+		relationList=new ArrayList<Integer>(stacksize);
+		for(int i=0;i<stacksize;i++)
+		{
+			relationList.add(stack[i]);
+		}
+	}
 
 	
 	public List<Integer> getRelationList() {

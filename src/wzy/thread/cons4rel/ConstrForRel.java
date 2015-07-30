@@ -19,7 +19,7 @@ public class ConstrForRel implements Callable{
 	protected int[][] train_triplets;
 	
 	protected static int[][][] triplet_graph;
-	protected static int maxPathNum=10;
+	protected static int maxPathNum=100;
 	protected static int maxLength;
 	protected static int minLength;
 	protected static boolean queit=false;

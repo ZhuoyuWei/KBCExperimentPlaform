@@ -11,6 +11,7 @@ import wzy.meta.PathSupport;
 import wzy.thread.cons4rel.BFS2Direct;
 import wzy.thread.cons4rel.BFSearch;
 import wzy.thread.cons4rel.ConstrForRel;
+import wzy.thread.cons4rel.DFSearch;
 
 public class ConstructFormulas implements Callable{
 
@@ -43,6 +44,11 @@ public class ConstructFormulas implements Callable{
 		relationTriplets=new int[relNum][][];
 		triplet_graph=new int[entityNum][][];
 	}
+	
+	/**
+	 * Build entity to entity graph, and with the edge type (relation)
+	 * reverseEdgeFlag can control whether include reversed edges.
+	 */
 	public void BuildGraph()
 	{
 		List<int[]>[] graph=new List[entityNum];
@@ -126,6 +132,11 @@ public class ConstructFormulas implements Callable{
 				cfr=new BFSearch();
 				break;
 			}
+			case 1:
+			{
+				cfr=new DFSearch();
+				break;
+			}			
 			}
 			cfr.setRelation(i);	
 			cfr.setTrain_triplets(relationTriplets[i]);

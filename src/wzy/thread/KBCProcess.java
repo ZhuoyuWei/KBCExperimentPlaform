@@ -227,7 +227,7 @@ public class KBCProcess implements Callable{
 		test_triplets=filted[2].toArray(new int[0][0]);
 	}
 	
-	private void StatisticTrainingSet()
+	public void StatisticTrainingSet()
 	{
 		int maxEntityId=-1;
 		int maxRelationId=-1;

@@ -354,6 +354,11 @@ public class FileTools {
 					String[] rels=line.split("\t");
 					for(int j=0;j<rels.length;j++)
 					{
+						if(rels[j].contains("_"))
+						{
+							String[] relsjs=rels[j].split("_");
+							rels[j]=relsjs[0];
+						}
 						rpathLists[relation][i].Add(Integer.parseInt(rels[j]));
 					}
 				}

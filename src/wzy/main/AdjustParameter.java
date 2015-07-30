@@ -31,17 +31,17 @@ public class AdjustParameter {
 		
 		//Read Three DB Files
 		KBCProcess readdataProcess=new KBCProcess();
-		readdataProcess.SetThreeTriplets(dir+"liuzhiyuan.train.txt"
-				, dir+"liuzhiyuan.valid.txt"
-				, dir+"liuzhiyuan.test.txt"
+		readdataProcess.SetThreeTriplets(dir+"exp_train.txt"
+				, dir+"exp_valid.txt"
+				, dir+"exp_test.txt"
 				, "\t");
 		double[] L2norms={0.1,1,10};
-		double[] gammas={1e-1,1e-2,1e-3,1e-4};
+		double[] gammas={1e-3,1e-4,1e-5,1e-6};
 		double[] margins={1,0.5,0.25,0.125};
 		//int[]  minibanchs={1440,2400,4800,9600};
 		int[]  minibanchs={4800};
 		
-		ExecutorService exec = Executors.newFixedThreadPool(16); 
+		ExecutorService exec = Executors.newFixedThreadPool(24); 
 		List<Callable<Integer>> alThreads=new ArrayList<Callable<Integer>>();
 		
 			
@@ -60,11 +60,11 @@ public class AdjustParameter {
 						String kbc_output_dir=dir+"/adjust_parameter/"+minibanchs[i]+"_"+margins[j]+"_"+gammas[k]+"_"+L2norms[h];
 						FileTools.makeDir(kbc_output_dir);
 						KBCProcess kbc_tester=new KBCProcess();
-						kbc_tester.setEmbedding_init_file(dir+"embedding.model");
-						kbc_tester.setPath_structure_file(dir+"formulas_length2");
+						kbc_tester.setEmbedding_init_file(dir+args[1]);
+						kbc_tester.setPath_structure_file(dir+args[2]);
 						kbc_tester.CopyThreeDataSets(readdataProcess);
 						kbc_tester.setEm(new TransEAndPathModel());
-						kbc_tester.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(50,50));
+						kbc_tester.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(100,100));
 					
 						//kbc_tester
 						kbc_tester.SetMiniBranch(minibanchs[i]);

@@ -20,17 +20,20 @@ public class MiningFomrulaStructures {
 		String dir=args[0];
 		
 		ConstructFormulas cf=new ConstructFormulas();
-		cf.setTrain_triplets(ReadTriplets.ReadTripletsFromFile(dir+"liuzhiyuan.train.txt", "\t"));
+		cf.setTrain_triplets(ReadTriplets.ReadTripletsFromFile(dir+"exp_train.txt", "\t"));
 		int[] entityAndRelationSizes=ReadTriplets.StaticTrainSet(cf.getTrain_triplets());
 		cf.setEntityNum(entityAndRelationSizes[0]);
 		cf.setRelNum(entityAndRelationSizes[1]);
 		cf.setMaxLength(Integer.parseInt(args[1])); //max path length:2 can run over, 3 is hard.
-		cf.setSearch_method(0); //BFS
-		cf.setThreNum(24);
+		cf.setSearch_method(1); //BFS
+		cf.setThreNum(48);
 		cf.setPrintsupport(true);
 		cf.setFormulaPrintFile(dir+"formulas");
 		System.err.println("Mining is starting.");
+		long start=System.currentTimeMillis();
 		cf.Processing();
+		long end=System.currentTimeMillis();
+		System.err.println("The time of mining is "+(end-start)/1000+"s");
 		
 	}
 }
