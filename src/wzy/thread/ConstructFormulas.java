@@ -1,12 +1,16 @@
 package wzy.thread;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import wzy.io.FileTools;
+import wzy.meta.GroundPath;
 import wzy.meta.PathSupport;
 import wzy.thread.cons4rel.BFS2Direct;
 import wzy.thread.cons4rel.BFSearch;
@@ -48,6 +52,7 @@ public class ConstructFormulas implements Callable{
 	/**
 	 * Build entity to entity graph, and with the edge type (relation)
 	 * reverseEdgeFlag can control whether include reversed edges.
+	 * h--->r,t
 	 */
 	public void BuildGraph()
 	{
@@ -263,5 +268,101 @@ public class ConstructFormulas implements Callable{
 	}
 
 
+	////////////////////Check Path Existence Experiments
+	public Random rand=new Random();
+	public List<GroundPath>[] DFSMiningPaths()
+	{
+		List<GroundPath>[] pathList=new List[11];
+		for(int i=1;i<=10;i++)
+		{
+			pathList[i]=new ArrayList<GroundPath>();
+		}
+		for(int i=0;i<2000;i++)
+		{
+			int snode=Math.abs(rand.nextInt())%entityNum;
+			int rsnode=snode;
+			List<Integer> relList=new ArrayList<Integer>();
+			Set<Integer> entitySet=new HashSet<Integer>();
+			entitySet.add(snode);
+			for(int j=0;j<10;j++)
+			{
+				int count=0;
+				while(count++<10)
+				{
+					if(triplet_graph[snode].length==0)
+						break;
+					int index=Math.abs(rand.nextInt())%triplet_graph[snode].length;
+					int nextnode=triplet_graph[snode][index][1];
+					if(!entitySet.contains(nextnode))
+					{
+						relList.add(triplet_graph[snode][index][0]);
+						GroundPath gp=new GroundPath();
+						gp.entity[0]=rsnode;
+						gp.entity[1]=nextnode;
+						gp.path.getRelationList().addAll(relList);
+						snode=nextnode;
+						entitySet.add(nextnode);
+						pathList[relList.size()].add(gp);
+						break;
+					}
+				}
+			}
+		}
+		return pathList;
+	}
+	
+	
+	public void DFSforCPE(List<GroundPath>[] pathList)
+	{
+		for(int i=1;i<=10;i++)
+		{
+			long start=System.currentTimeMillis();
+			for(int j=0;j<pathList[i].size();j++)
+			{
+				//count=0;
+				boolean flag=DFSOnePath(pathList[i].get(j),pathList[i].get(j).entity[0],0);
+				if(!flag)
+				{
+					System.out.println("err");
+				}
+				//System.out.println(count);
+				
+				//count=0;
+				pathList[i].get(j).entity[1]=Math.abs(rand.nextInt())%entityNum;
+				DFSOnePath(pathList[i].get(j),pathList[i].get(j).entity[0],0);
+				
+			}
+			long end=System.currentTimeMillis();
+			System.out.println(i+"\t"+(end-start)*0.1+"\t"+Math.log((end-start)*0.1));
+		}
+	}
+	
+	//public int count=0;
+	public boolean DFSOnePath(GroundPath gp,int node,int l)
+	{
+		if(l>=gp.path.length())
+			return false;
+		int[][] nextnodes=triplet_graph[node];
+		//int count=0;
+		for(int i=0;i<nextnodes.length;i++)
+		{
+			if(gp.path.GetElement(l).equals(nextnodes[i][0]))
+			{
+				//count++;
+				if(l+1==gp.path.length()&&nextnodes[i][1]==gp.entity[1])
+					return true;
+				else if(l+1==gp.path.length())
+					continue;
+				else
+				{
+					boolean flag=DFSOnePath(gp,nextnodes[i][1],l+1);
+					if(flag)
+						return true;
+				}
+			}
+		}
+		//System.out.println(count);
+		return false;
+	}
 	
 }

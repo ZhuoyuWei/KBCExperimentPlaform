@@ -1,11 +1,14 @@
 package wzy.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
 import wzy.io.FileTools;
+import wzy.meta.BooleanScore;
+import wzy.meta.GroundPath;
 import wzy.meta.TripletHash;
 import wzy.model.para.SpecificParameter;
 import wzy.model.para.TransEParameter;
@@ -66,6 +69,15 @@ public class TransE extends EmbeddingModel {
 				}
 			}
 		}		
+	}
+	@Override
+	public void InitEmbeddingFromFile(String filename)
+	{
+		InitEmbeddingsMemory();
+		List<Object> embeddingList=new ArrayList<Object>();
+		embeddingList.add(entityEmbedding);
+		embeddingList.add(relationEmbedding);
+		FileTools.ReadEmbeddingsFromFile(filename, embeddingList);
 	}
 	@Override
 	protected void InitGradients()
@@ -187,7 +199,8 @@ public class TransE extends EmbeddingModel {
 		project=true;
 		trainprintable=true;	
 
-		Epoch=1000;
+		//Epoch=1000;
+		Epoch=0;
 		minibranchsize=4800;
 		gamma=0.001;
 		margin=1.;
@@ -219,4 +232,111 @@ public class TransE extends EmbeddingModel {
 			}
 		}
 	}
+	
+	
+	
+	//check path
+	public double CheckPaths(List<GroundPath> paths,int falsecount)
+	{
+		Random rand=new Random();
+		int truecount=0;
+		for(int i=0;i<paths.size();i++)
+		{
+			double[] pathEmbeddings=new double[relation_dim];
+			for(int j=0;j<paths.get(i).path.length();j++)
+			{
+				for(int k=0;k<relation_dim;k++)
+				{
+					pathEmbeddings[k]+=relationEmbedding[paths.get(i).path.GetElement(j)][k];
+				}
+			}
+			
+			List<BooleanScore> bsList=new ArrayList<BooleanScore>();
+
+			
+			for(int j=0;j<falsecount;j++)
+			{
+				int index=Math.abs(rand.nextInt())%entityNum;
+				while(index==paths.get(i).entity[1])
+				{
+					index=Math.abs(rand.nextInt())%entityNum;
+				}
+				BooleanScore bs=new BooleanScore();
+				bs.flag=false;
+				bs.score=CalculateTripletScore(entityEmbedding[paths.get(i).entity[0]],pathEmbeddings
+					,entityEmbedding[index]);
+				bsList.add(bs);
+			}
+			
+			BooleanScore bs=new BooleanScore();
+			bs.flag=true;
+			bs.score=CalculateTripletScore(entityEmbedding[paths.get(i).entity[0]],pathEmbeddings
+					,entityEmbedding[paths.get(i).entity[1]]);
+			bsList.add(bs);
+			
+			Collections.sort(bsList,new BooleanScore());
+			
+			if(bsList.get(0).flag)
+				truecount++;
+		}
+		return (double)truecount/paths.size();
+	}
+	
+	public double CheckPaths100(List<GroundPath> paths,int falsecount)
+	{
+		Random rand=new Random();
+		int truecount=0;
+		for(int u=0;u<100;u++)
+		for(int i=0;i<500;i++)
+		{
+			double[] pathEmbeddings=new double[relation_dim];
+			for(int j=0;j<paths.get(i).path.length();j++)
+			{
+				for(int k=0;k<relation_dim;k++)
+				{
+					pathEmbeddings[k]+=relationEmbedding[paths.get(i).path.GetElement(j)][k];
+				}
+			}
+			
+			List<BooleanScore> bsList=new ArrayList<BooleanScore>();
+
+			
+			for(int j=0;j<falsecount;j++)
+			{
+				int index=Math.abs(rand.nextInt())%entityNum;
+				while(index==paths.get(i).entity[1])
+				{
+					index=Math.abs(rand.nextInt())%entityNum;
+				}
+				BooleanScore bs=new BooleanScore();
+				bs.flag=false;
+				bs.score=CalculateTripletScore(entityEmbedding[paths.get(i).entity[0]],pathEmbeddings
+					,entityEmbedding[index]);
+				bsList.add(bs);
+			}
+			
+			BooleanScore bs=new BooleanScore();
+			bs.flag=true;
+			bs.score=CalculateTripletScore(entityEmbedding[paths.get(i).entity[0]],pathEmbeddings
+					,entityEmbedding[paths.get(i).entity[1]]);
+			bsList.add(bs);
+			
+			Collections.sort(bsList,new BooleanScore());
+			
+			if(bsList.get(0).flag)
+				truecount++;
+		}
+		return (double)truecount/1000.;
+	}	
+	
+	public double CalculateTripletScore(double[] h,double[] r, double[] t)
+	{
+		double[] s=new double[r.length];
+		for(int i=0;i<r.length;i++)
+		{
+			s[i]=h[i]+r[i]-t[i];
+		}
+		return MatrixTool.VectorNorm2(s);
+	}
+	
 }

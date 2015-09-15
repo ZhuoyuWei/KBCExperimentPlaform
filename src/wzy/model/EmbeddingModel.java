@@ -1,12 +1,18 @@
 package wzy.model;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 
 import wzy.io.FileTools;
+import wzy.meta.EntityAndScoreForSort;
 import wzy.meta.TripletHash;
 import wzy.model.para.SpecificParameter;
 import wzy.tool.MatrixTool;
@@ -538,6 +544,12 @@ public class EmbeddingModel {
 		int raw_meanr=0;
 		int filter_hit10r=0;
 		int filter_meanr=0;	
+		
+		int raw_hit1l=0;
+		int raw_hit1r=0;
+		int filter_hit1l=0;
+		int filter_hit1r=0;
+		
 		long start=System.currentTimeMillis();
 		for(int i=0;i<test_triplets.length;i++)
 		{
@@ -567,9 +579,13 @@ public class EmbeddingModel {
 			raw_meanl+=rawcount;
 			if(rawcount<=10)
 				raw_hit10l++;
+			if(rawcount<=1)
+				raw_hit1l++;			
 			filter_meanl+=filtercount;
 			if(filtercount<=10)
 				filter_hit10l++;
+			if(filtercount<=1)
+				filter_hit1l++;			
 			//right testing
 			falsetriplet=copyints(test_triplets[i]);
 			rawcount=1;
@@ -592,9 +608,13 @@ public class EmbeddingModel {
 			raw_meanr+=rawcount;
 			if(rawcount<=10)
 				raw_hit10r++;
+			if(rawcount<=1)
+				raw_hit1r++;			
 			filter_meanr+=filtercount;
 			if(filtercount<=10)
-				filter_hit10r++;			
+				filter_hit10r++;
+			if(filtercount<=1)
+				filter_hit1r++;			
 		}
 		long end=System.currentTimeMillis();
 		if(test_triplets.length<=0)
@@ -606,15 +626,19 @@ public class EmbeddingModel {
 			System.out.println("Left:\t"+(double)raw_hit10l/test_triplets.length
 					+"\t"+(double)raw_meanl/test_triplets.length
 					+"\t"+(double)filter_hit10l/test_triplets.length
-					+"\t"+(double)filter_meanl/test_triplets.length);
+					+"\t"+(double)filter_meanl/test_triplets.length
+					+"\t"+(double)filter_hit1l/test_triplets.length);
 			System.out.println("Right:\t"+(double)raw_hit10r/test_triplets.length
 					+"\t"+(double)raw_meanr/test_triplets.length
 					+"\t"+(double)filter_hit10r/test_triplets.length
-					+"\t"+(double)filter_meanr/test_triplets.length);		
+					+"\t"+(double)filter_meanr/test_triplets.length
+					+"\t"+(double)filter_hit1r/test_triplets.length);		
 			System.out.println("Final:\t"+(double)(raw_hit10l+raw_hit10r)/test_triplets.length/2.
 					+"\t"+(double)(raw_meanl+raw_meanr)/test_triplets.length/2.
 					+"\t"+(double)(filter_hit10l+filter_hit10r)/test_triplets.length/2.
-					+"\t"+(double)(filter_meanl+filter_meanr)/test_triplets.length/2.);
+					+"\t"+(double)(filter_meanl+filter_meanr)/test_triplets.length/2.
+					+"\t"+(double)(filter_hit1l+filter_hit1r)/test_triplets.length/2.);
+			
 			System.out.flush();
 		}
 		if(print_log_file!=null)
@@ -624,7 +648,103 @@ public class EmbeddingModel {
 					filter_hit10r, filter_meanr, test_triplets.length);
 		}
 	}
-	
+	public void ProduceCandidateForMLN(int[][] test_triplets)
+	{
+		PreTesting(test_triplets);
+
+		String dir="/dev/shm/wm18candidateright";
+		PrintStream[] ps=new PrintStream[18];
+		for(int i=0;i<18;i++)
+		{
+			FileTools.makeDir(dir+"/"+i);
+			try {
+				ps[i]=new PrintStream(dir+"/"+i+"/test.query.map");
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		long start=System.currentTimeMillis();
+		for(int i=0;i<test_triplets.length;i++)
+		{
+			int[] falsetriplet;
+			int rawcount;
+			int filtercount;
+			double score=CalculateSimilarity(test_triplets[i]);
+			//left testing
+/*			falsetriplet=copyints(test_triplets[i]);
+			rawcount=1;
+			filtercount=1;
+			//Queue<EntityAndScoreForSort> queue = 
+					//new PriorityQueue<EntityAndScoreForSort>(11,new EntityAndScoreForSort()); 
+			List<EntityAndScoreForSort> elist= new ArrayList<EntityAndScoreForSort>(entityNum); 
+			for(int j=0;j<entityNum;j++)
+			{
+				//if(j==test_triplets[i][2])
+					//continue;
+				falsetriplet[2]=j;
+				double tscore=CalculateSimilarity(falsetriplet);
+
+				EntityAndScoreForSort ea=new EntityAndScoreForSort();
+				ea.entity=j;
+				ea.score=tscore;
+				elist.add(ea);
+			}
+			Collections.sort(elist,new EntityAndScoreForSort());
+			
+			List<EntityAndScoreForSort> leftress=elist.subList(0, 1000);
+			for(int j=0;j<1000;j++)
+			{
+				ps[test_triplets[i][1]].print(test_triplets[i][1]+"("+test_triplets[i][0]+","+leftress.get(j).entity+")\t");
+				if(test_triplets[i][2]==leftress.get(j).entity)
+					ps[test_triplets[i][1]].print("1.0\t");
+				else
+					ps[test_triplets[i][1]].print("0.0\t");		
+				ps[test_triplets[i][1]].println(i);
+			}*/
+			
+			
+			//right testing
+			falsetriplet=copyints(test_triplets[i]);
+			rawcount=1;
+			filtercount=1;
+			List<EntityAndScoreForSort> elist= new ArrayList<EntityAndScoreForSort>(entityNum); 
+			for(int j=0;j<entityNum;j++)
+			{
+				//if(j==test_triplets[i][0])
+					//continue;
+				falsetriplet[0]=j;
+				double tscore=CalculateSimilarity(falsetriplet);
+				EntityAndScoreForSort ea=new EntityAndScoreForSort();
+				ea.entity=j;
+				ea.score=tscore;
+				elist.add(ea);
+			}
+			Collections.sort(elist,new EntityAndScoreForSort());
+			
+			List<EntityAndScoreForSort> rightress=elist.subList(0, 1000);	
+			
+
+			for(int j=0;j<1000;j++)
+			{
+				ps[test_triplets[i][1]].print(test_triplets[i][1]+"("+rightress.get(j).entity+","+test_triplets[i][2]+")\t");
+				if(test_triplets[i][0]==rightress.get(j).entity)
+					ps[test_triplets[i][1]].print("1.0\t");
+				else
+					ps[test_triplets[i][1]].print("0.0\t");		
+				ps[test_triplets[i][1]].println(i);
+			}
+			
+		}
+		
+		for(int i=0;i<18;i++)
+		{
+			ps[i].flush();
+			ps[i].close();
+		}
+
+	}
 	/**
 	 * Just for methods who have paths, and embedding paths like relations.
 	 */

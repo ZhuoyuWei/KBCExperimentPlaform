@@ -69,6 +69,8 @@ public class KBCProcess implements Callable{
 		em.Testing(test_triplets);
 	}
 	
+	
+	
 	//just for debug
 	public void Processing_PathTesting()
 	{
@@ -100,6 +102,50 @@ public class KBCProcess implements Callable{
 		em.CountEntityForRelation(train_triplets);
 		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
 	}	
+	
+	
+	public void Processing_produceForMLN()
+	{
+		if(em==null)
+		{
+			System.err.println("There is no available embedding model, and please set it in main().");
+			System.exit(-1);
+		}
+		StatisticTrainingSet();
+		if(print_log_file!=null)
+		{
+			//FileTools.ReDirectOutputStreamToFile(print_log_file);
+			em.setPrint_log_file(print_log_file);
+		}
+		if(printMiddleModel_dir!=null)
+		{
+			em.setPrintMiddleModel_dir(printMiddleModel_dir);
+			FileTools.makeDir(printMiddleModel_dir);
+		}
+		//em.SetBestParameter();
+		
+		if(this.path_structure_file!=null)
+			em.InitPathFromFile(path_structure_file);
+		if(this.embedding_init_file!=null)
+			em.InitEmbeddingFromFile(embedding_init_file);
+		else
+			em.InitEmbeddingsRandomly(train_triplets);
+
+		em.CountEntityForRelation(train_triplets);
+		em.BuildTrainAndValidTripletSet(train_triplets, validate_triplets);
+		
+		if(!quiet)
+		{
+			System.err.println("Train process is starting.");
+		}
+		em.Training(train_triplets, validate_triplets);
+		if(print_model_file!=null)
+			em.PrintModel(print_model_file);
+		
+		em.ProduceCandidateForMLN(test_triplets);
+	}
+	
+	
 	
 	/**
 	 * Read train, validate, test data sets from three files.

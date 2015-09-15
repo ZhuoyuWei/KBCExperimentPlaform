@@ -9,6 +9,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import wzy.meta.GroundPath;
 import wzy.meta.PathSupport;
 import wzy.meta.RPath;
 
@@ -372,5 +373,66 @@ public class FileTools {
 		}
 		return rpathLists;
 	}
+	
+	public static void PrintPaths(List<GroundPath>[] gpList,String dir) throws FileNotFoundException
+	{
+		for(int i=1;i<=10;i++)
+		{
+			PrintStream ps=new PrintStream(dir+i);
+			for(int j=0;j<gpList[i].size();j++)
+			{
+				ps.print(gpList[i].get(j).entity[0]+"\t");
+				
+				for(int k=0;k<i-1;k++)
+				{
+					ps.print(gpList[i].get(j).path.getRelationList().get(k)+"-");
+				}
+				ps.print(gpList[i].get(j).path.getRelationList().get(i-1)+"\t");
+				
+				ps.println(gpList[i].get(j).entity[1]);
+			}
+			ps.flush();
+			ps.close();
+		}
+	}
+	
+	public static List<GroundPath>[] ReadGroundPath(String dir) throws IOException
+	{
+		List<GroundPath>[] resList=new List[11];
+		
+		for(int i=1;i<=10;i++)
+		{
+			try {
+				resList[i]=new ArrayList<GroundPath>();
+				BufferedReader br=new BufferedReader(new FileReader(dir+"/"+i));
+				String buffer=null;
+				while((buffer=br.readLine())!=null)
+				{
+					if(buffer.length()<2)
+						continue;
+					String[] ss=buffer.split("\t");
+					GroundPath gp=new GroundPath();
+					gp.entity[0]=Integer.parseInt(ss[0]);
+					gp.entity[1]=Integer.parseInt(ss[2]);
+					String[] token=ss[1].split("-");
+					for(int j=0;j<token.length;j++)
+					{
+						gp.path.getRelationList().add(Integer.parseInt(token[j]));
+					}
+					resList[i].add(gp);
+				}
+				br.close();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		return resList;
+	}
+	
+	
+	
+	
 	
 }

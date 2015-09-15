@@ -24,6 +24,8 @@ public class ConstrForRel implements Callable{
 	protected static int minLength;
 	protected static boolean queit=false;
 	
+	protected static boolean filter=false;
+	
 	private List<PathSupport>[] rpathLists=null;
 	
 	/**
@@ -65,7 +67,8 @@ public class ConstrForRel implements Callable{
 		}
 		
 		Collections.sort(pathList,new PathSupport());
-		pathList=Filter(pathList);
+		if(filter)
+			pathList=Filter(pathList);
 		
 		
 		if(rpathLists!=null)

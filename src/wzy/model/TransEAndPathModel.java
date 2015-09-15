@@ -1,9 +1,13 @@
 package wzy.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import wzy.io.FileTools;
+import wzy.meta.BooleanScore;
+import wzy.meta.GroundPath;
 import wzy.meta.RPath;
 import wzy.model.para.SpecificParameter;
 import wzy.model.para.TransEParameter;
@@ -307,12 +311,12 @@ public class TransEAndPathModel extends EmbeddingModel{
 		Epoch=1000;
 		minibranchsize=4800;
 		gamma=0.001;
-		margin=1.;
+		margin=0.5;
 		random_data_each_epoch=100000;
 		bern=false;
 		
 		lammadaL1=0.;
-		lammadaL2=0.;
+		lammadaL2=10;
 	}
 	
 	@Override
@@ -338,4 +342,5 @@ public class TransEAndPathModel extends EmbeddingModel{
 	}
 
 	
+
 }

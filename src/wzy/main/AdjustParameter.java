@@ -35,9 +35,9 @@ public class AdjustParameter {
 				, dir+"exp_valid.txt"
 				, dir+"exp_test.txt"
 				, "\t");
-		double[] L2norms={0.1,1,10};
-		double[] gammas={1e-3,1e-4,1e-5,1e-6};
-		double[] margins={1,0.5,0.25,0.125};
+		double[] L2norms={0.1,10};
+		double[] gammas={1e-2,1e-3,1e-4,1e-5};
+		double[] margins={1,0.5,0.125};
 		//int[]  minibanchs={1440,2400,4800,9600};
 		int[]  minibanchs={4800};
 		

@@ -1,26 +1,19 @@
-package wzy.main;
+package wzy.main.cpe;
 
-import wzy.thread.KBCProcess;
-import wzy.model.NoTrans;
-import wzy.model.NoTransS;
-import wzy.model.NoTrans_feature;
-import wzy.model.RevTransE;
+import java.io.IOException;
+import java.util.List;
+
+import wzy.io.FileTools;
+import wzy.meta.GroundPath;
 import wzy.model.TransE;
 import wzy.model.TransEAndPathModel;
-import wzy.model.TransE_rl;
-import wzy.model.TransF;
-import wzy.model.TransF_JF;
-import wzy.model.TransH;
-import wzy.model.TransR;
-import wzy.model.TransS;
-import wzy.model.TransT;
 import wzy.model.para.TransEParameter;
 import wzy.model.para.TransFParameter;
 import wzy.model.para.TransHParameter;
 import wzy.model.para.TransRParameter;
+import wzy.thread.KBCProcess;
 
-public class LinkPrediction {
-
+public class CheckTransEPath {
 	public static TransEParameter SetTransEParameter(int entitydim,int relationdim)
 	{
 		TransEParameter ptranse=new TransEParameter();
@@ -52,7 +45,10 @@ public class LinkPrediction {
 		return ptranse;
 	}		
 	
-	public static void main(String[] args)
+
+	
+	
+	public static void main(String[] args) throws IOException
 	{
 		//String dir="F:\\emnlp2015\\fb15k\\FB15k\\";
 		//String dir="F:\\Workspace\\KBCworkspace\\dataset\\" +
@@ -72,19 +68,22 @@ public class LinkPrediction {
 				, dir+"exp_test.txt"
 				, "\t");
 		
-		
-		kbc_raw_tester.setEm(new TransEAndPathModel());
-		//kbc_raw_tester.setPrint_model_file(dir+args[1]);
-		kbc_raw_tester.setEmbedding_init_file(dir+args[1]);
-		kbc_raw_tester.setPath_structure_file(dir+args[2]);
+		TransE ptrans=new TransE();
+		kbc_raw_tester.setEm(ptrans);
 		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(50,50));
+
+		kbc_raw_tester.StatisticTrainingSet();
+		kbc_raw_tester.getEm().InitEmbeddingFromFile(dir+args[1]);
 		
-	
-		kbc_raw_tester.getEm().SetBestParameter();
-		kbc_raw_tester.getEm().setTrainprintable(false);
+		List<GroundPath>[] pathList=FileTools.ReadGroundPath(dir+"paths/");
 		
-		kbc_raw_tester.Processing();
-		
+		for(int i=1;i<pathList.length;i++)
+		{
+			long start=System.currentTimeMillis();
+			double score=ptrans.CheckPaths100(pathList[i], Integer.parseInt(args[2]));
+			long end=System.currentTimeMillis();
+			System.out.println(i+"\t"+score+"\t"+(end-start));
+		}
 		
 	}
 }
