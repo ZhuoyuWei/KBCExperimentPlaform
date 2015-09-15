@@ -17,7 +17,7 @@ java wzy.main.AdjustParameter train_valid_test_data_dir init_embedding_filepath 
 
 java wzy.main.LinkPrediction train_valid_test_data_dir init_embedding_filepath path_info_filepath
 
-And the filenames in the train_valid_test_data_dir should be exp_train.txt, exp_valid.txt and exp_test.txt, or you can change them in the codes.
+And the filenames in the train_valid_test_data_dir should be exp_train.txt, exp_valid.txt and exp_test.txt, or you can change them in the codes. I have add both WN18 and FB15K datasets in this project, but if you want to run the method in aaai paper, you should run TransE first and get the KB embedding, and our TransE implement can be used for it.
 
 Tips:
 a) In this project, System.err is used to print instant information, which is for monitoring the processing or schedule of the running of algorithm. On other hand, System.out is used to print results or others you want to remain, amd usually it should be redirected to file stream.
