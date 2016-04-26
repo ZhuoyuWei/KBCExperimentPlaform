@@ -648,13 +648,13 @@ public class EmbeddingModel {
 					filter_hit10r, filter_meanr, test_triplets.length);
 		}
 	}
-	public void ProduceCandidateForMLN(int[][] test_triplets)
+	public void ProduceCandidateForMLN(String dir,int[][] test_triplets,boolean leftorright)
 	{
 		PreTesting(test_triplets);
 
-		String dir="/dev/shm/wm18candidateright";
-		PrintStream[] ps=new PrintStream[18];
-		for(int i=0;i<18;i++)
+		
+		PrintStream[] ps=new PrintStream[relationNum];
+		for(int i=0;i<relationNum;i++)
 		{
 			FileTools.makeDir(dir+"/"+i);
 			try {
@@ -673,76 +673,137 @@ public class EmbeddingModel {
 			int filtercount;
 			double score=CalculateSimilarity(test_triplets[i]);
 			//left testing
-/*			falsetriplet=copyints(test_triplets[i]);
-			rawcount=1;
-			filtercount=1;
-			//Queue<EntityAndScoreForSort> queue = 
+			if(leftorright)
+			{
+				falsetriplet=copyints(test_triplets[i]);
+				rawcount=1;
+				filtercount=1;
+				//Queue<EntityAndScoreForSort> queue = 
 					//new PriorityQueue<EntityAndScoreForSort>(11,new EntityAndScoreForSort()); 
-			List<EntityAndScoreForSort> elist= new ArrayList<EntityAndScoreForSort>(entityNum); 
-			for(int j=0;j<entityNum;j++)
-			{
-				//if(j==test_triplets[i][2])
-					//continue;
-				falsetriplet[2]=j;
-				double tscore=CalculateSimilarity(falsetriplet);
+				List<EntityAndScoreForSort> elist= new ArrayList<EntityAndScoreForSort>(entityNum); 
+				for(int j=0;j<entityNum;j++)
+				{
+					//if(j==test_triplets[i][2])
+						//continue;
+					falsetriplet[2]=j;
+					double tscore=CalculateSimilarity(falsetriplet);
 
-				EntityAndScoreForSort ea=new EntityAndScoreForSort();
-				ea.entity=j;
-				ea.score=tscore;
-				elist.add(ea);
+					EntityAndScoreForSort ea=new EntityAndScoreForSort();
+					ea.entity=j;
+					ea.score=tscore;
+					elist.add(ea);
+				}
+				Collections.sort(elist,new EntityAndScoreForSort());
+			
+				List<EntityAndScoreForSort> leftress=elist.subList(0, 1000);
+				for(int j=0;j<1000;j++)
+				{
+					ps[test_triplets[i][1]].print(test_triplets[i][1]+"("+test_triplets[i][0]+","+leftress.get(j).entity+")\t");
+					if(test_triplets[i][2]==leftress.get(j).entity)
+						ps[test_triplets[i][1]].print("1.0\t");
+					else
+						ps[test_triplets[i][1]].print("0.0\t");		
+					ps[test_triplets[i][1]].println(i);
+				}
 			}
-			Collections.sort(elist,new EntityAndScoreForSort());
-			
-			List<EntityAndScoreForSort> leftress=elist.subList(0, 1000);
-			for(int j=0;j<1000;j++)
+			else
 			{
-				ps[test_triplets[i][1]].print(test_triplets[i][1]+"("+test_triplets[i][0]+","+leftress.get(j).entity+")\t");
-				if(test_triplets[i][2]==leftress.get(j).entity)
-					ps[test_triplets[i][1]].print("1.0\t");
-				else
-					ps[test_triplets[i][1]].print("0.0\t");		
-				ps[test_triplets[i][1]].println(i);
-			}*/
+				//right testing
+				falsetriplet=copyints(test_triplets[i]);
+				rawcount=1;
+				filtercount=1;
+				List<EntityAndScoreForSort> elist= new ArrayList<EntityAndScoreForSort>(entityNum); 
+				for(int j=0;j<entityNum;j++)
+				{
+					//if(j==test_triplets[i][0])
+						//continue;
+					falsetriplet[0]=j;
+					double tscore=CalculateSimilarity(falsetriplet);
+					EntityAndScoreForSort ea=new EntityAndScoreForSort();
+					ea.entity=j;
+					ea.score=tscore;
+					elist.add(ea);
+				}
+				Collections.sort(elist,new EntityAndScoreForSort());
 			
-			
-			//right testing
-			falsetriplet=copyints(test_triplets[i]);
-			rawcount=1;
-			filtercount=1;
-			List<EntityAndScoreForSort> elist= new ArrayList<EntityAndScoreForSort>(entityNum); 
-			for(int j=0;j<entityNum;j++)
-			{
-				//if(j==test_triplets[i][0])
-					//continue;
-				falsetriplet[0]=j;
-				double tscore=CalculateSimilarity(falsetriplet);
-				EntityAndScoreForSort ea=new EntityAndScoreForSort();
-				ea.entity=j;
-				ea.score=tscore;
-				elist.add(ea);
-			}
-			Collections.sort(elist,new EntityAndScoreForSort());
-			
-			List<EntityAndScoreForSort> rightress=elist.subList(0, 1000);	
+				List<EntityAndScoreForSort> rightress=elist.subList(0, 1000);	
 			
 
-			for(int j=0;j<1000;j++)
-			{
-				ps[test_triplets[i][1]].print(test_triplets[i][1]+"("+rightress.get(j).entity+","+test_triplets[i][2]+")\t");
-				if(test_triplets[i][0]==rightress.get(j).entity)
-					ps[test_triplets[i][1]].print("1.0\t");
-				else
-					ps[test_triplets[i][1]].print("0.0\t");		
-				ps[test_triplets[i][1]].println(i);
+				for(int j=0;j<1000;j++)
+				{
+					ps[test_triplets[i][1]].print(test_triplets[i][1]+"("+rightress.get(j).entity+","+test_triplets[i][2]+")\t");
+					if(test_triplets[i][0]==rightress.get(j).entity)
+						ps[test_triplets[i][1]].print("1.0\t");
+					else
+						ps[test_triplets[i][1]].print("0.0\t");		
+					ps[test_triplets[i][1]].println(i);
+				}
 			}
-			
 		}
 		
-		for(int i=0;i<18;i++)
+		for(int i=0;i<relationNum;i++)
 		{
 			ps[i].flush();
 			ps[i].close();
 		}
+
+	}
+	public void ProduceCandidateForRandomWalk(String filename,int[][] test_triplets,int candidate_size)
+	{
+		PreTesting(test_triplets);
+
+		PrintStream ps=null;
+		try {
+			ps = new PrintStream(filename);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		long start=System.currentTimeMillis();
+		for(int i=0;i<test_triplets.length;i++)
+		{
+			for(int k=0;k<2;k++)
+			{
+				int[] falsetriplet;
+				int rawcount=1;
+				int filtercoun=1;
+				//double score=CalculateSimilarity(test_triplets[i]);
+				//left testing
+
+				falsetriplet=copyints(test_triplets[i]);
+				
+				List<EntityAndScoreForSort> elist= new ArrayList<EntityAndScoreForSort>(entityNum); 
+				for(int j=0;j<entityNum;j++)
+				{
+					//if(j==test_triplets[i][2])
+						//continue;
+					if(k==0)
+						falsetriplet[2]=j;
+					else
+						falsetriplet[0]=j;						
+					double tscore=CalculateSimilarity(falsetriplet);
+
+					EntityAndScoreForSort ea=new EntityAndScoreForSort();
+					ea.entity=j;
+					ea.score=tscore;
+					elist.add(ea);
+				}
+				Collections.sort(elist,new EntityAndScoreForSort());
+			
+				List<EntityAndScoreForSort> ress=elist.subList(0, candidate_size);
+				ps.print(ress.get(0).entity);
+				for(int j=1;j<candidate_size;j++)
+				{
+					ps.print("\t"+ress.get(j).entity);
+				}
+				ps.println();
+			}
+			
+		}
+		
+		ps.flush();
+		ps.close();
 
 	}
 	/**

@@ -374,6 +374,57 @@ public class FileTools {
 		return rpathLists;
 	}
 	
+	//read formula collections
+	public static int[][] ReadFormulas_RelationMatrix(String filename,int relNum)
+	{
+		int[][] relationmatrix=null;
+		try {
+			relationmatrix=new int[relNum][relNum];
+			BufferedReader br=new  BufferedReader(new FileReader(filename));
+			String buffer=null;
+			while((buffer=br.readLine())!=null)
+			{
+				if(buffer.length()<2)
+					continue;
+				String[] ss=buffer.split("\t");
+				int relation=Integer.parseInt(ss[0]);
+				int pcount=Integer.parseInt(ss[1]);
+				
+				for(int i=0;i<pcount;i++)
+				{
+					
+					
+					String line=br.readLine();
+					String[] rels=line.split("\t");
+					if(rels.length<2)
+						continue;
+					for(int j=0;j<rels.length;j++)
+					{
+						if(rels[j].contains("_"))
+						{
+							String[] relsjs=rels[j].split("_");
+							rels[j]=relsjs[0];
+						}
+
+					}
+					
+					for(int j=0;j<rels.length-1;j++)
+					{
+						relationmatrix[Integer.parseInt(rels[j])][Integer.parseInt(rels[j+1])]=relation;
+					}
+					
+				}
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return relationmatrix;
+	}
+	
 	public static void PrintPaths(List<GroundPath>[] gpList,String dir) throws FileNotFoundException
 	{
 		for(int i=1;i<=10;i++)
@@ -431,7 +482,39 @@ public class FileTools {
 		return resList;
 	}
 	
-	
+	public static int[][][] ReadTestAllCandidates(String filename,int test_triplet_size,int candidate_size)
+	{
+		int[][][] res=new int[test_triplet_size][2][candidate_size];
+		try {
+			BufferedReader br=new BufferedReader(new FileReader(filename));
+			String buffer=null;
+			for(int i=0;i<test_triplet_size;i++)
+			{
+				for(int j=0;j<2;j++)
+				{
+					buffer=br.readLine();
+					String[] ss=buffer.split("\t");
+					if(ss.length!=candidate_size)
+					{
+						System.err.println("read test candidate error "+ss.length+" "+candidate_size);
+						System.exit(-1);
+					}
+					for(int k=0;k<candidate_size;k++)
+					{
+						res[i][j][k]=Integer.parseInt(ss[k]);
+					}
+				}
+			}
+			br.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return res;
+	}
 	
 	
 	

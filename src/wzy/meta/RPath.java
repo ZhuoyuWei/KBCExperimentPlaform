@@ -1,11 +1,13 @@
 package wzy.meta;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
-public class RPath {
+public class RPath{
 
 	private List<Integer> relationList=new ArrayList<Integer>();
+
 	
 	public int Add(Integer relation)
 	{
@@ -66,5 +68,7 @@ public class RPath {
 	{
 		return relationList.get(index);
 	}
+	
+	
 	
 }

@@ -142,7 +142,7 @@ public class KBCProcess implements Callable{
 		if(print_model_file!=null)
 			em.PrintModel(print_model_file);
 		
-		em.ProduceCandidateForMLN(test_triplets);
+		//em.ProduceCandidateForMLN(test_triplets);
 	}
 	
 	

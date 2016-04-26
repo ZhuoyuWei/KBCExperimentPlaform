@@ -73,10 +73,10 @@ public class LinkPrediction {
 				, "\t");
 		
 		
-		kbc_raw_tester.setEm(new TransEAndPathModel());
-		//kbc_raw_tester.setPrint_model_file(dir+args[1]);
-		kbc_raw_tester.setEmbedding_init_file(dir+args[1]);
-		kbc_raw_tester.setPath_structure_file(dir+args[2]);
+		kbc_raw_tester.setEm(new TransE());
+		kbc_raw_tester.setPrint_model_file(dir+args[1]);
+		//kbc_raw_tester.setEmbedding_init_file(dir+args[1]);
+		//kbc_raw_tester.setPath_structure_file(dir+args[2]);
 		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(50,50));
 		
 	

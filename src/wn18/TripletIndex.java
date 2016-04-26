@@ -69,6 +69,17 @@ public class TripletIndex {
 		return resList;
 	}
 	
+	public void PrintDict(List<String> list,String filename) throws FileNotFoundException, UnsupportedEncodingException
+	{
+		PrintWriter pw=new PrintWriter(filename,"utf8");
+		for(int i=0;i<list.size();i++)
+		{
+			pw.println(list.get(i)+"\t"+i);
+		}
+		pw.flush();
+		pw.close();
+	}
+	
 	public void PrintIndex(List<int[]> tripletList,String filename) throws FileNotFoundException, UnsupportedEncodingException
 	{
 		PrintWriter pw=new PrintWriter(filename,"utf8");
@@ -84,15 +95,19 @@ public class TripletIndex {
 	public static void main(String[] args) throws IOException
 	{
 		TripletIndex ti=new TripletIndex();
-		ti.PrintIndex(ti.ReadDataSetFromFile("F:\\Workspace\\KBCworkspace\\dataset\\" +
-				"wordnet-mlj12\\wordnet-mlj12\\wordnet-mlj12-train.txt"),"F:\\Workspace\\KBCworkspace\\dataset\\" +
+		ti.PrintIndex(ti.ReadDataSetFromFile("C:\\Users\\liushulin\\Desktop\\emnlp\\kbdata\\antoine的原始数据\\" +
+				"wordnet-mlj12\\wordnet-mlj12\\wordnet-mlj12-train.txt"),"C:\\Users\\liushulin\\Desktop\\emnlp\\kbdata\\antoine的原始数据\\" +
 				"wordnet-mlj12\\wordnet-mlj12\\int_wordnet-mlj12-train.txt");
-		ti.PrintIndex(ti.ReadDataSetFromFile("F:\\Workspace\\KBCworkspace\\dataset\\" +
-				"wordnet-mlj12\\wordnet-mlj12\\wordnet-mlj12-valid.txt"),"F:\\Workspace\\KBCworkspace\\dataset\\" +
+		ti.PrintIndex(ti.ReadDataSetFromFile("C:\\Users\\liushulin\\Desktop\\emnlp\\kbdata\\antoine的原始数据\\" +
+				"wordnet-mlj12\\wordnet-mlj12\\wordnet-mlj12-valid.txt"),"C:\\Users\\liushulin\\Desktop\\emnlp\\kbdata\\antoine的原始数据\\" +
 				"wordnet-mlj12\\wordnet-mlj12\\int_wordnet-mlj12-valid.txt");
-		ti.PrintIndex(ti.ReadDataSetFromFile("F:\\Workspace\\KBCworkspace\\dataset\\" +
-				"wordnet-mlj12\\wordnet-mlj12\\wordnet-mlj12-test.txt"),"F:\\Workspace\\KBCworkspace\\dataset\\" +
-				"wordnet-mlj12\\wordnet-mlj12\\int_wordnet-mlj12-test.txt");		
+		ti.PrintIndex(ti.ReadDataSetFromFile("C:\\Users\\liushulin\\Desktop\\emnlp\\kbdata\\antoine的原始数据\\" +
+				"wordnet-mlj12\\wordnet-mlj12\\wordnet-mlj12-test.txt"),"C:\\Users\\liushulin\\Desktop\\emnlp\\kbdata\\antoine的原始数据\\" +
+				"wordnet-mlj12\\wordnet-mlj12\\int_wordnet-mlj12-test.txt");
+		ti.PrintDict(ti.eid2name, "C:\\Users\\liushulin\\Desktop\\emnlp\\kbdata\\antoine的原始数据\\" +
+				"wordnet-mlj12\\wordnet-mlj12\\entity2id.txt");		
+		ti.PrintDict(ti.rid2name, "C:\\Users\\liushulin\\Desktop\\emnlp\\kbdata\\antoine的原始数据\\" +
+				"wordnet-mlj12\\wordnet-mlj12\\relation2id.txt");
 	}
 	
 	

@@ -199,8 +199,8 @@ public class TransE extends EmbeddingModel {
 		project=true;
 		trainprintable=true;	
 
-		//Epoch=1000;
-		Epoch=0;
+		Epoch=1000;
+		//Epoch=0;
 		minibranchsize=4800;
 		gamma=0.001;
 		margin=1.;
