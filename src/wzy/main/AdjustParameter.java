@@ -64,7 +64,7 @@ public class AdjustParameter {
 						kbc_tester.setPath_structure_file(dir+args[2]);
 						kbc_tester.CopyThreeDataSets(readdataProcess);
 						kbc_tester.setEm(new TransEAndPathModel());
-						kbc_tester.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(100,100));
+						kbc_tester.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(50,50));
 					
 						//kbc_tester
 						kbc_tester.SetMiniBranch(minibanchs[i]);

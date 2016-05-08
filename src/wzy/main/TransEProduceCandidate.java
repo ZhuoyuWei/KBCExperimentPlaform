@@ -57,7 +57,8 @@ public class TransEProduceCandidate {
 		//String dir="F:\\emnlp2015\\fb15k\\FB15k\\";
 		//String dir="F:\\Workspace\\KBCworkspace\\dataset\\" +
 			//	"wordnet-mlj12\\wordnet-mlj12\\";		
-		String dir=args[0];
+		//String dir=args[0];
+		String dir="C:\\Users\\Administrator\\Documents\\data\\fb15k\\";
 		
 		//Read Three DB Files
 		KBCProcess kbc_raw_tester=new KBCProcess();

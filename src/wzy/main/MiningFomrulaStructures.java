@@ -16,7 +16,7 @@ public class MiningFomrulaStructures {
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
 		System.err.println("Mining formulas process.\t"+df.format(new Date()));
 		
-		//String dir="F:\\emnlp2015\\fb15k\\FB15k\\";
+		//String dir="C:\\Users\\Administrator\\Documents\\data\\wn18\\";
 		String dir=args[0];
 		
 		ConstructFormulas cf=new ConstructFormulas();
@@ -25,8 +25,9 @@ public class MiningFomrulaStructures {
 		cf.setEntityNum(entityAndRelationSizes[0]);
 		cf.setRelNum(entityAndRelationSizes[1]);
 		cf.setMaxLength(Integer.parseInt(args[1])); //max path length:2 can run over, 3 is hard.
-		cf.setSearch_method(1); //BFS
-		cf.setThreNum(48);
+		//cf.setMaxLength(4);
+		cf.setSearch_method(1); //DFS
+		cf.setThreNum(1);
 		cf.setPrintsupport(true);
 		cf.setFormulaPrintFile(dir+"formulas");
 		System.err.println("Mining is starting.");

@@ -7,7 +7,7 @@ import java.util.List;
 public class RPath{
 
 	private List<Integer> relationList=new ArrayList<Integer>();
-
+	private double weight=0;
 	
 	public int Add(Integer relation)
 	{
@@ -67,6 +67,12 @@ public class RPath{
 	public Integer GetElement(int index)
 	{
 		return relationList.get(index);
+	}
+	public double getWeight() {
+		return weight;
+	}
+	public void setWeight(double weight) {
+		this.weight = weight;
 	}
 	
 	

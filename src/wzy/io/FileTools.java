@@ -307,7 +307,8 @@ public class FileTools {
 			List<Integer> relationList=pathList.get(i).getPath().getRelationList();
 			for(int j=0;j<relationList.size();j++)
 			{
-				ps.print(relationList.get(j)+"_"+psupport.getCount()+"\t");
+				//ps.print(relationList.get(j)+"_"+psupport.getCount()+"\t");
+				ps.print(relationList.get(j)+"_"+psupport.getScore()+"\t");
 			}
 			ps.println();
 		}
@@ -359,6 +360,7 @@ public class FileTools {
 						{
 							String[] relsjs=rels[j].split("_");
 							rels[j]=relsjs[0];
+							rpathLists[relation][i].setWeight(Double.parseDouble(relsjs[1]));
 						}
 						rpathLists[relation][i].Add(Integer.parseInt(rels[j]));
 					}
