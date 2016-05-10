@@ -34,7 +34,7 @@ public class RandomWalkModel {
 	public double[][] pathWeights;
 	public double[][] pathWeightGradients;
 	
-	protected int Epoch=1;
+	protected int Epoch=600;
 	protected int minibranchsize=4800;
 	protected double gamma=0.01;
 	protected double margin=1.;
@@ -54,6 +54,9 @@ public class RandomWalkModel {
 	public int[][][] triplet_graph;
 	public boolean nocount=true;
 	
+	//TransE embedding
+	public EmbeddingModel em;
+	
 	//debug
 	public int train_true_count=0;
 	public int train_false_count=0;
@@ -68,7 +71,12 @@ public class RandomWalkModel {
 			//random init
 			for(int j=0;j<pathWeights[i].length;j++)
 			{
-				pathWeights[i][j]=rand.nextDouble();
+				//pathWeights[i][j]=rand.nextDouble();
+				
+				//init for transE
+				pathWeights[i][j]=0.;
+				if(j==pathWeights[i].length-1)
+					pathWeights[i][j]=1.;
 			}
 		}
 	}
@@ -172,7 +180,8 @@ public class RandomWalkModel {
 	 */
 	protected int[] GenerateFalseTriplet(int[] triplet)
 	{
-		double pr=0.5;
+		//double pr=0.5;
+		double pr=1.;
 		
 		TripletHash falseTri=new TripletHash();
 		falseTri.setTriplet(copyints(triplet));
@@ -251,8 +260,12 @@ public class RandomWalkModel {
 		for(int i=0;i<test_cans.length;i++)
 		{
 			int[] triplet=test_triplets[i];
-			int[] fcounts=RandomWalk(triplet);
+			double[] fcounts=RandomWalk(triplet);
 			train_true_count+=CheckRandomRes(fcounts);
+			/*if(train_true_count>0)
+			{
+				System.out.println("debug > 0 ");
+			}*/
 			double ans_score=Logistic_F_wx(triplet[1],fcounts);
 			for(int j=0;j<2;j++)
 			{
@@ -441,7 +454,7 @@ public class RandomWalkModel {
 		InitGradients();
 		for(int i=sindex;i<=eindex;i++)
 		{			
-			int[] true_paths_count=RandomWalk(train_triplets[i]);
+			double[] true_paths_count=RandomWalk(train_triplets[i]);
 			train_true_count+=CheckRandomRes(true_paths_count);
 			double true_f_wx=Logistic_F_wx(train_triplets[i][1],true_paths_count);
 			Logistic_Grident(train_triplets[i][1],true_paths_count,true_f_wx-1);
@@ -449,7 +462,7 @@ public class RandomWalkModel {
 			for(int j=0;j<false_triplet_size;j++)
 			{
 				int[] false_triplet=GenerateFalseTriplet(train_triplets[i]);
-				int[] false_paths_count=RandomWalk(false_triplet);
+				double[] false_paths_count=RandomWalk(false_triplet);
 				train_false_count+=CheckRandomRes(false_paths_count);
 				double false_f_wx=Logistic_F_wx(false_triplet[1],false_paths_count);
 				Logistic_Grident(false_triplet[1],false_paths_count,false_f_wx);
@@ -504,7 +517,7 @@ public class RandomWalkModel {
 		
 	}
 	
-	public double Logistic_F_wx(int r,int[] fcounts)
+	public double Logistic_F_wx(int r,double[] fcounts)
 	{
 
 		double wx=F_wx(r,fcounts);
@@ -513,7 +526,7 @@ public class RandomWalkModel {
 		return 1/(1+exp_wx);
 	}
 	
-	public double F_wx(int r,int[] fcounts)
+	public double F_wx(int r,double[] fcounts)
 	{
 		double wx=0;
 		for(int i=0;i<fcounts.length;i++)
@@ -525,7 +538,7 @@ public class RandomWalkModel {
 		return wx;
 	}
 	
-	public void Logistic_Grident(int r,int[] fcounts,double f_wx_y)
+	public void Logistic_Grident(int r,double[] fcounts,double f_wx_y)
 	{
 		for(int i=0;i<fcounts.length;i++)
 		{
@@ -535,29 +548,36 @@ public class RandomWalkModel {
 		}
 	}
 	
-	public int[] RandomWalk(int[] triplet)
+	public double[] RandomWalk(int[] triplet)
 	{
-		int[] fcounts=new int[pathWeights[triplet[1]].length];
-		fcounts[fcounts.length-1]=1;
+		double[] fcounts=new double[pathWeights[triplet[1]].length];
+		if(em!=null)
+			fcounts[fcounts.length-1]=-em.CalculateSimilarity(triplet);
+		else
+			fcounts[fcounts.length-1]=1;			
 		return fcounts;
 	}
 	
-	public void NoCount(int[] scr)
+	public void NoCount(double[] scr)
 	{
 		for(int i=0;i<scr.length;i++)
-			if(scr[i]>0)
+			if(scr[i]>1e-06)
 				scr[i]=1;
 	}
 
-	public int CheckRandomRes(int[] res)
+	public int CheckRandomRes(double[] res)
 	{
 		int sum=0;
 		for(int i=0;i<res.length-1;i++)
 		{
-			if(res[i]>0)
-				sum+=res[i];
+			if(res[i]>1e-6)
+				sum+=1;
 		}
-		return sum;
+		//return sum;
+		if(sum>0)
+			return 1;
+		else
+			return 0;
 	}
 	
 

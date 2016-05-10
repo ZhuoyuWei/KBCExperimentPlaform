@@ -40,9 +40,9 @@ public class RandomAttention extends RandomWalkModel{
 	}
 	
 	@Override
-	public int[] RandomWalk(int[] triplet)
+	public double[] RandomWalk(int[] triplet)
 	{
-		int[] fcounts=new int[pathWeights[triplet[1]].length];
+		double[] fcounts=new double[pathWeights[triplet[1]].length];
 		
 		int state=triplet[0];
 		FormulaTreeNode ft_node=ff[triplet[1]].root;
@@ -126,7 +126,7 @@ public class RandomAttention extends RandomWalkModel{
 	}
 	
 	@Override
-	public double Logistic_F_wx(int r,int[] fcounts)
+	public double Logistic_F_wx(int r,double[] fcounts)
 	{
 		return super.Logistic_F_wx(r, fcounts);
 	}

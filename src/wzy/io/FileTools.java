@@ -230,7 +230,8 @@ public class FileTools {
 			String[] ss=buffer.split("\t");
 			if(ss.length!=embedding.length)
 			{
-				System.err.println("There is an error occurs in reading embedding.");
+				System.err.println("There is an error occurs in reading embedding: "
+						+ss.length+" "+embedding.length);
 				System.exit(-1);
 			}
 			for(int i=0;i<ss.length;i++)

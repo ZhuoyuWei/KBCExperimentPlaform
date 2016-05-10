@@ -2,8 +2,10 @@ package wzy.thread;
 
 import java.util.concurrent.Callable;
 
+import wzy.main.LinkPrediction;
 import wzy.model.RandomWalkModel;
 import wzy.model.TransE;
+import wzy.model.para.SpecificParameter;
 import wzy.model.randwk.DFSAllPath;
 import wzy.model.randwk.RandomExactly;
 
@@ -21,6 +23,7 @@ public class RandomWalkProcess implements Callable{
 				, "\t");
 		kbc.setEm(new TransE());
 		
+		
 		kbc.StatisticTrainingSet();
 		
 		//RandomWalkModel rw=new RandomExactly();
@@ -31,8 +34,11 @@ public class RandomWalkProcess implements Callable{
 		rw.entityNum=kbc.getEm().getEntityNum();
 		rw.relationNum=kbc.getEm().getRelationNum();
 		rw.ReadFormulas(dir+"paths.txt");
-		//rw.InitPathWeights();
-		rw.InitPathWeightsByDef();
+		kbc.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(50,50));
+		kbc.getEm().InitEmbeddingFromFile(dir+"emb");
+		rw.em=kbc.getEm();
+		rw.InitPathWeights();
+		//rw.InitPathWeightsByDef();
 		
 		ConstructFormulas cc=new ConstructFormulas();
 		cc.setEntityNum(rw.entityNum);
@@ -45,15 +51,20 @@ public class RandomWalkProcess implements Callable{
 		
 		rw.Training(rw.train_triplets, rw.validate_triplets);
 		System.err.println("Training data "+rw.train_true_count+" "+rw.train_false_count+" "
-				+(rw.train_true_count/(double)rw.train_false_count));	
-		//rw.TestAllCandidates(dir+"cand.txt", cand_size);
+				+(rw.train_true_count/(double)rw.train_false_count)+" "+rw.train_triplets.length);	
+		
 		rw.TestCandidatesForRel(dir+"split_candidates", cand_size, "\t");
+		
 		System.err.println("Training data "+rw.train_true_count+" "+rw.train_false_count/998+" "
 				+(rw.train_true_count/((double)rw.train_false_count)/998));		
+		
+		rw.test_triplets=kbc.getTest_triplets();
+		rw.TestAllCandidates(dir+"cand.txt", cand_size);
 		
 		rw.PrintPathsWeight(dir+"path.weight");
 		rw.PrintTopWeightFormula(dir+"path.weight.top_l1", 10, dir+"relation2id.txt");
 	}
+	
 	
 	@Override
 	public Object call() throws Exception {

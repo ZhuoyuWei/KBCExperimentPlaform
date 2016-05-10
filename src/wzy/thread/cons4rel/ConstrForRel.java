@@ -263,6 +263,24 @@ public class ConstrForRel implements Callable{
 	public static void setQueit(boolean queit) {
 		ConstrForRel.queit = queit;
 	}
+	public static int getSupport_threthold() {
+		return support_threthold;
+	}
+	public static void setSupport_threthold(int support_threthold) {
+		ConstrForRel.support_threthold = support_threthold;
+	}
+	public static double getConfidence_threthold() {
+		return confidence_threthold;
+	}
+	public static void setConfidence_threthold(double confidence_threthold) {
+		ConstrForRel.confidence_threthold = confidence_threthold;
+	}
+	public static int getFalse_triplet() {
+		return false_triplet;
+	}
+	public static void setFalse_triplet(int false_triplet) {
+		ConstrForRel.false_triplet = false_triplet;
+	}
 	
 	
 	

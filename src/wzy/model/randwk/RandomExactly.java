@@ -10,11 +10,13 @@ import wzy.model.RandomWalkModel;
 
 public class RandomExactly extends RandomWalkModel {
 	
-	public int max_round=10000;
+	public int max_round=100;
 	public double restart_rate=0.3;
 	public double back_rate=0.5;
 	public Random rand=new Random();
 	
+	double[] fcounts;
+	int t;
 	
 	@Override
 	public void InitGradients()
@@ -28,11 +30,11 @@ public class RandomExactly extends RandomWalkModel {
 		super.OneBranchTraining(train_triplets, sindex, eindex);
 	}
 	
-	@Override
-	public int[] RandomWalk(int[] triplet)
+/*	@Override
+	public double[] RandomWalk(int[] triplet)
 	{
 		//int[] fcounts=new int[pathWeights[triplet[1]].length];
-		int[] fcounts=super.RandomWalk(triplet);
+		fcounts=super.RandomWalk(triplet);
 		
 		int state=triplet[0];
 		FormulaTreeNode ft_node=ff[triplet[1]].root;
@@ -101,23 +103,58 @@ public class RandomExactly extends RandomWalkModel {
 
 		return fcounts;
 	}
-	
-	public int[] RandomWalk(int[] triplet)
-	{
-		int[] fcounts=super.RandomWalk(triplet);
-		
-		int state=triplet[0];
-		FormulaTreeNode ft_node=ff[triplet[1]].root;
-		List<int[]> path_record=new ArrayList<int[]>();
-		
-		for(int i=0;i<max_round;i++)
-		{
-		
-		}
-	}
+	*/
 	
 	@Override
-	public double Logistic_F_wx(int r,int[] fcounts)
+	public double[] RandomWalk(int[] triplet)
+	{
+		fcounts=super.RandomWalk(triplet);
+		
+		
+		t=triplet[2];
+		
+		//List<int[]> path_record=new ArrayList<int[]>();
+		for(int r=0;r<max_round;r++)
+		{
+			int state=triplet[0];
+			FormulaTreeNode ft_node=ff[triplet[1]].root;
+			DFS(state,ft_node);
+		}
+		
+		return fcounts;
+		
+	}
+	protected void DFS(int s,FormulaTreeNode fnode)
+	{	
+		List<Integer> stateList=new ArrayList<Integer>();
+		List<FormulaTreeNode> formulaList=new ArrayList<FormulaTreeNode>();
+		for(int j=0;j<triplet_graph[s].length;j++)
+		{
+			if(fnode.next_map[triplet_graph[s][j][0]]!=null)
+			{
+				if(fnode.next_map[triplet_graph[s][j][0]].leaf&&triplet_graph[s][j][1]==t)
+				{
+					fcounts[fnode.next_map[triplet_graph[s][j][0]].formula]++;
+				}
+				else if(fnode.next_map[triplet_graph[s][j][0]].next_map!=null)
+				{
+					//DFS(triplet_graph[s][j][1],fnode.next_map[triplet_graph[s][j][0]]);
+					stateList.add(triplet_graph[s][j][1]);
+					formulaList.add(fnode.next_map[triplet_graph[s][j][0]]);
+				}
+			}
+		}
+		if(stateList.size()>0)
+		{
+			int index=rand.nextInt(stateList.size());
+			DFS(stateList.get(index),formulaList.get(index));
+		}
+			
+	}
+	
+
+	@Override
+	public double Logistic_F_wx(int r,double[] fcounts)
 	{
 		return super.Logistic_F_wx(r, fcounts);
 	}

@@ -11,10 +11,10 @@ public class DFSAllPath extends RandomWalkModel{
 
 	private int t;
 
-	private int[] fcounts;
+	private double[] fcounts;
 	
 	@Override
-	public int[] RandomWalk(int[] triplet)
+	public double[] RandomWalk(int[] triplet)
 	{
 		fcounts=super.RandomWalk(triplet);
 		
@@ -32,7 +32,7 @@ public class DFSAllPath extends RandomWalkModel{
 		{
 			if(fnode.next_map[triplet_graph[s][j][0]]!=null)
 			{
-				if(fnode.next_map[triplet_graph[s][j][0]].leaf)
+				if(fnode.next_map[triplet_graph[s][j][0]].leaf&&triplet_graph[s][j][1]==t)
 				{
 					fcounts[fnode.next_map[triplet_graph[s][j][0]].formula]++;
 				}
