@@ -24,4 +24,5 @@ a) In this project, System.err is used to print instant information, which is fo
 
 For Wn18 dataset, to make experiments for completing paths/formulas:
 Random Walk Exactly:
+
 0.811238516992	0.202400135078	35.8848599823	0.937018631128	0.771353272848	22.0373694818
