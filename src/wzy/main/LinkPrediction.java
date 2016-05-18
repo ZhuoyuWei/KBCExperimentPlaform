@@ -77,7 +77,7 @@ public class LinkPrediction {
 		kbc_raw_tester.setPrint_model_file(dir+args[1]);
 		//kbc_raw_tester.setEmbedding_init_file(dir+args[1]);
 		//kbc_raw_tester.setPath_structure_file(dir+args[2]);
-		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(50,50));
+		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(100,100));
 		
 	
 		kbc_raw_tester.getEm().SetBestParameter();

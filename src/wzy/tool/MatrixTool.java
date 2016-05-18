@@ -63,6 +63,25 @@ public class MatrixTool {
 		return score;
 	}
 	
+	public static double VectorCosSim(double[] a,double[] b)
+	{
+		double score=VectorDot(a,b);
+		score*=(1/VectorNorm2(a));
+		score*=(1/VectorNorm2(b));
+		return score;
+	}
+	public static double MatrixCosSim(double[][] a, double[][] b)
+	{
+		double score=DotMulti(a,b);
+		score*=(1/MatrixNorm2(a));
+		score*=(1/MatrixNorm2(b));		
+		return score;
+	}
+	public static double MatrixCosSim(double sim,double norm1,double norm2)
+	{
+		return sim*(1/norm1)*(1/norm2);
+	}
+	
 	public static double VectorNorm2(double[] vec)
 	{
 		double norm=0;
@@ -126,4 +145,6 @@ public class MatrixTool {
 		}
 		return d;
 	}
+	
+
 }

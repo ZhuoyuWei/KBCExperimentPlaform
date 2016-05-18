@@ -9,12 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wzy.io.FileTools;
+import wzy.thread.RandomWalkProcess;
 
 public class CheckCand {
 
 	
 	public String[] triplets;
 	public String[] cands;
+	public int relNum;
 	
 	public String[] ReadFile(String filename) throws IOException
 	{
@@ -72,10 +74,10 @@ public class CheckCand {
 		}
 	}
 	
-	public void SplitData(String dir) throws FileNotFoundException
+	public void SplitData(String dir,int state) throws FileNotFoundException
 	{
-		List<String>[][] list=new List[18][2];
-		for(int i=0;i<18;i++)
+		List<String>[][] list=new List[relNum][2];
+		for(int i=0;i<relNum;i++)
 		{
 			for(int j=0;j<2;j++)
 			{
@@ -87,9 +89,9 @@ public class CheckCand {
 			String[] ss=triplets[i].split("\t");
 			int rel=Integer.parseInt(ss[1]);
 			list[rel][0].add(triplets[i]);
-			for(int j=0;j<2;j++)
+			for(int j=0;j<state;j++)
 			{
-				list[rel][1].add(cands[i*2+j]);				
+				list[rel][1].add(cands[i*state+j]);				
 			}
 		}
 		PrintFiles(dir,list);
@@ -101,7 +103,7 @@ public class CheckCand {
 		FileTools.makeDir(dir);
 		FileTools.makeDir(dir+"/0");
 		FileTools.makeDir(dir+"/1");
-		for(int i=0;i<18;i++)
+		for(int i=0;i<relNum;i++)
 		{
 			for(int j=0;j<2;j++)
 			{
@@ -119,11 +121,14 @@ public class CheckCand {
 	public static void main(String[] args) throws IOException
 	{
 		CheckCand cc=new CheckCand();
-		cc.triplets=cc.ReadFile("C:\\Users\\Administrator\\Documents\\data\\wn18\\exp_test.txt");
-		cc.cands=cc.ReadFile("C:\\Users\\Administrator\\Documents\\data\\wn18\\cand.txt");
+		String dir=args[0];
+		//String dir="C:\\Users\\Administrator\\Documents\\data\\wn18_doubledirect\\";
+		cc.triplets=cc.ReadFile(dir+"exp_test.txt");
+		cc.cands=cc.ReadFile(dir+args[1]);
+		cc.relNum=Integer.parseInt(args[2]);
 		System.out.println(cc.triplets.length+"\t"+cc.cands.length);
-		cc.Evaluation();
-		cc.SplitData("C:\\Users\\Administrator\\Documents\\data\\wn18\\split_candidatesas");
+		//cc.Evaluation();
+		cc.SplitData(dir+"split_candidates",RandomWalkProcess.teststate);
 		
 	}
 }

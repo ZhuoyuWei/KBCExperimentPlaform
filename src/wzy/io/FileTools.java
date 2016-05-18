@@ -155,7 +155,7 @@ public class FileTools {
 	}
 	public static void PrintEmbedding(double[] embedding,PrintStream ps)
 	{
-		if(embedding.length<=0)
+		if(embedding==null||embedding.length<=0)
 			return;
 		for(int i=0;i<embedding.length-1;i++)
 		{
@@ -485,15 +485,15 @@ public class FileTools {
 		return resList;
 	}
 	
-	public static int[][][] ReadTestAllCandidates(String filename,int test_triplet_size,int candidate_size)
+	public static int[][][] ReadTestAllCandidates(String filename,int test_triplet_size,int candidate_size,int state)
 	{
-		int[][][] res=new int[test_triplet_size][2][candidate_size];
+		int[][][] res=new int[test_triplet_size][state][candidate_size];
 		try {
 			BufferedReader br=new BufferedReader(new FileReader(filename));
 			String buffer=null;
 			for(int i=0;i<test_triplet_size;i++)
 			{
-				for(int j=0;j<2;j++)
+				for(int j=0;j<state;j++)
 				{
 					buffer=br.readLine();
 					String[] ss=buffer.split("\t");

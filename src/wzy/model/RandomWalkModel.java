@@ -12,29 +12,33 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import wzy.io.FileTools;
 import wzy.io.busi.ReadTriplets;
 import wzy.meta.FormulaForest;
 import wzy.meta.RPath;
 import wzy.meta.TripletHash;
+import wzy.thread.RandomWalkProcess;
+import wzy.tool.MatrixTool;
 
-public class RandomWalkModel {
+public class RandomWalkModel implements Callable{
 
-	public int[][] relation_trans_matrix=null;
-	public int entityNum=0;
-	public int relationNum=0;
+	public int singlerel;
+	public static int[][] relation_trans_matrix=null;
+	public static int entityNum=0;
+	public static int relationNum=0;
 	
 	public int[][] train_triplets;
 	public int[][] validate_triplets;
 	public int[][] test_triplets;
 	
 	
-	public RPath[][] rpathLists=null;
+	public static RPath[][] rpathLists=null;
 	public double[][] pathWeights;
 	public double[][] pathWeightGradients;
 	
-	protected int Epoch=600;
+	protected int Epoch=10;
 	protected int minibranchsize=4800;
 	protected double gamma=0.01;
 	protected double margin=1.;
@@ -44,14 +48,16 @@ public class RandomWalkModel {
 	protected boolean bern=false;
 	protected Set<TripletHash> filteringSet; 
 	
-	public FormulaForest[] ff;
+	public static FormulaForest[] ff;
 	
-	public boolean l2_flag=true;
+	public boolean l2_flag=false;
+	public boolean project=true;
+	public static boolean emb_force_1=true;
 	public double l2_C=1;
 	public double learning_rate=0.01;
 	public int false_triplet_size=1;
 	
-	public int[][][] triplet_graph;
+	public static int[][][] triplet_graph;
 	public boolean nocount=true;
 	
 	//TransE embedding
@@ -61,12 +67,21 @@ public class RandomWalkModel {
 	public int train_true_count=0;
 	public int train_false_count=0;
 	
+	//multiThreads
+	public String rel_dir;
+	
 	
 	public void InitPathWeights()
 	{
 		pathWeights=new double[relationNum][];
 		for(int i=0;i<relationNum;i++)
 		{
+			if(rpathLists[i]==null)
+			{
+				pathWeights[i]=new double[1];
+				pathWeights[i][0]=1;
+				continue;
+			}
 			pathWeights[i]=new double[rpathLists[i].length+1];
 			//random init
 			for(int j=0;j<pathWeights[i].length;j++)
@@ -74,9 +89,9 @@ public class RandomWalkModel {
 				//pathWeights[i][j]=rand.nextDouble();
 				
 				//init for transE
-				pathWeights[i][j]=0.;
+				pathWeights[i][j]=0.1;
 				if(j==pathWeights[i].length-1)
-					pathWeights[i][j]=1.;
+					pathWeights[i][j]=1;
 			}
 		}
 	}
@@ -92,7 +107,7 @@ public class RandomWalkModel {
 		}
 	}
 	
-	public void ReadFormulas(String filename)
+	public static void ReadFormulas(String filename)
 	{
 		if(relationNum>0)
 		{
@@ -122,6 +137,12 @@ public class RandomWalkModel {
 		for(int epoch=0;epoch<Epoch;epoch++)
 		{
 			//Disrupt the order of training data set
+			
+			if(epoch==2)
+			{
+				System.out.println(epoch);
+			}
+			
 			long start=System.currentTimeMillis();
 			for(int i=0;i<random_data_each_epoch;i++)
 			{
@@ -144,6 +165,7 @@ public class RandomWalkModel {
 					eindex=train_triplets.length-1;
 				//InitGradients();
 				OneBranchTraining(train_triplets,sindex,eindex);	
+				//InitPathWeights();
 			}
 			long end=System.currentTimeMillis();
 			if(trainprintable)
@@ -231,17 +253,17 @@ public class RandomWalkModel {
 		{
 			this.test_triplets=ReadTriplets.ReadTripletsFromFile(dir+"/0/"+i,separator);
 			System.out.println("Relation "+i);
-			TestAllCandidates(dir+"/1/"+i,candidate_size);
+			TestAllCandidates(dir+"/1/"+i,candidate_size,RandomWalkProcess.teststate,System.out);
 		}
 	}
 	
-	public void TestAllCandidates(String filename,int candidate_size)
+	public void TestAllCandidates(String filename,int candidate_size,int state,PrintStream ps)
 	{
 		if(this.filteringSet==null)
 			BuildTrainAndValidTripletSet(train_triplets,validate_triplets);
 		//|test_triplets|*|2(left,right)|*|Top100|
 		int[][][] test_cans=FileTools.ReadTestAllCandidates(filename,
-				test_triplets.length, candidate_size);
+				test_triplets.length, candidate_size,state);
 		if(test_cans.length!=test_triplets.length)
 		{
 			System.err.println("different triplets for test error");
@@ -267,7 +289,7 @@ public class RandomWalkModel {
 				System.out.println("debug > 0 ");
 			}*/
 			double ans_score=Logistic_F_wx(triplet[1],fcounts);
-			for(int j=0;j<2;j++)
+			for(int j=0;j<state;j++)
 			{
 				int ans_index=-1;
 				for(int k=0;k<candidate_size;k++)
@@ -342,18 +364,18 @@ public class RandomWalkModel {
 		for(int m=0;m<2;m++)
 		{
 			for(int i=0;i<2;i++)
-				System.out.println(hits10_r[i]/(double)tri_sum[m][i]+
+				ps.println(hits10_r[i]/(double)tri_sum[m][i]+
 					"\t"+hits1_r[i]/(double)tri_sum[m][i]+
 					"\t"+mean_r[i]/(double)tri_sum[m][i]+
 					"\t"+hits10_f[i]/(double)tri_sum[m][i]+
 					"\t"+hits1_f[i]/(double)tri_sum[m][i]+
-					"\t"+mean_f[i]/(double)tri_sum[m][i]);
-			System.out.println((hits10_r[0]+hits10_r[1])/(double)(tri_sum[m][0]+tri_sum[m][1])+
+					"\t"+mean_f[i]/(double)tri_sum[m][i]+"\t"+test_triplets.length);
+			ps.println((hits10_r[0]+hits10_r[1])/(double)(tri_sum[m][0]+tri_sum[m][1])+
 					"\t"+(hits1_r[0]+hits1_r[1])/(double)(tri_sum[m][0]+tri_sum[m][1])+
 					"\t"+(mean_r[0]+mean_r[1])/(double)(tri_sum[m][0]+tri_sum[m][1])+
 					"\t"+(hits10_f[0]+hits10_f[1])/(double)(tri_sum[m][0]+tri_sum[m][1])+
 					"\t"+(hits1_f[0]+hits1_f[1])/(double)(tri_sum[m][0]+tri_sum[m][1])+
-					"\t"+(mean_f[0]+mean_f[1])/(double)(tri_sum[m][0]+tri_sum[m][1]));
+					"\t"+(mean_f[0]+mean_f[1])/(double)(tri_sum[m][0]+tri_sum[m][1])+"\t"+test_triplets.length);
 		}
 		
 		
@@ -502,14 +524,34 @@ public class RandomWalkModel {
 			}
 		}
 		
+		//norm l1 ball projecting
+		if(project)
+		{
+			for(int i=0;i<pathWeights.length;i++)
+			{
+				double norm=MatrixTool.VectorNorm1(pathWeights[i]);
+				if(norm>1)
+				{
+					for(int j=0;j<pathWeights[i].length;j++)
+					{
+						pathWeights[i][j]/=norm;
+					}
+				}
+				if(emb_force_1) // 
+				{
+					pathWeights[i][pathWeights[i].length-1]=1.;
+				}
+			}					
+		}
+		
 		//l1-norm
 		if(true)
 		{
-			for(int i=0;i<pathWeightGradients.length;i++)
+			for(int i=0;i<pathWeights.length;i++)
 			{
-				for(int j=0;j<pathWeightGradients[i].length;j++)
+				for(int j=0;j<pathWeights[i].length;j++)
 				{
-					if(Math.abs(pathWeights[i][j])<1e-6)
+					if(Math.abs(pathWeights[i][j])<1e-4)
 						pathWeights[i][j]=0;
 				}
 			}			
@@ -550,7 +592,11 @@ public class RandomWalkModel {
 	
 	public double[] RandomWalk(int[] triplet)
 	{
-		double[] fcounts=new double[pathWeights[triplet[1]].length];
+		double[] fcounts=null;
+		if(pathWeights!=null&&pathWeights[0]!=null)
+			fcounts=new double[pathWeights[triplet[1]].length];
+		else
+			fcounts=new double[1];
 		if(em!=null)
 			fcounts[fcounts.length-1]=-em.CalculateSimilarity(triplet);
 		else
@@ -578,6 +624,45 @@ public class RandomWalkModel {
 			return 1;
 		else
 			return 0;
+	}
+	
+	public void Processing()
+	{
+		InitPathWeights();
+		
+		PrintStream ps=null;
+		try {
+			ps=new PrintStream(rel_dir+singlerel+"log");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("Relation "+singlerel+" triplets "+train_triplets.length);
+		Training(train_triplets, validate_triplets);
+		ps.println("Training data "+train_true_count+" "+train_false_count+" "
+				+(train_true_count/(double)train_false_count)+" "+train_triplets.length);	
+		
+		PrintPathsWeight(rel_dir+singlerel+"path.weight");
+		
+		TestAllCandidates(rel_dir+singlerel, RandomWalkProcess.cand_size,RandomWalkProcess.teststate,ps);
+		ps.println("Training data "+train_true_count+" "+train_false_count/998+" "
+				+(train_true_count/((double)train_false_count)/998));		
+
+		
+	}
+	@Override
+	public Object call() throws Exception {
+		// TODO Auto-generated method stub
+		try
+		{
+			Processing();
+		}catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		
+		return null;
 	}
 	
 

@@ -1,15 +1,10 @@
 package wzy.thread.cons4rel;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
-
 import wzy.meta.RPath;
+import wzy.meta.TripletHash;
 
-public class DFSearch extends ConstrForRel{
-
+public class DFSNoFalseSearch extends ConstrForRel {
+	
 	private int o;
 	private boolean debug=false;
 	
@@ -149,7 +144,36 @@ public class DFSearch extends ConstrForRel{
 					counts=new double[2];
 					path2Conf.put(path, counts);
 				}
-				counts[flag]++;
+				
+				
+				
+				//compute the scores
+				int[] tmpcount=new int[2];
+				for(int j=0;j<neighbors.length;j++)
+				{
+					if(neighbors[i][0]!=neighbors[j][0])
+						continue;
+					TripletHash th=new TripletHash();
+					int[] tri=new int[3];
+					tri[0]=s;
+					tri[1]=neighbors[j][0];
+					tri[2]=neighbors[j][1];
+					th.setTriplet(tri);
+					if(ConstrForRel.trainTripletSet.contains(th))
+						tmpcount[1]++;
+					else
+						tmpcount[0]++;
+				}
+				for(int j=0;j<2;j++)
+				{
+					tmpcount[j]/=tmpcount[1];
+				}
+				for(int j=0;j<2;j++)
+				{
+					counts[j]+=tmpcount[j];
+				}
+				
+				
 				//debug
 				if(debug)
 				{
@@ -197,4 +221,5 @@ public class DFSearch extends ConstrForRel{
 		
 	}
 	
+
 }

@@ -16,6 +16,8 @@ public class FormulaForest {
 	public void BuildForest(RPath[] paths,int relNum)
 	{
 		BuildForest(relNum);
+		if(paths==null)
+			return;
 		for(int i=0;i<paths.length;i++)
 		{
 			if(paths[i].length()<=0)
@@ -41,7 +43,7 @@ public class FormulaForest {
 				{
 					pnode.next_map[paths[i].GetElement(j)]=new FormulaTreeNode();
 					pnode.next_map[paths[i].GetElement(j)].rel=paths[i].GetElement(j);
-					pnode.next_map[paths[i].GetElement(j)].parent=root;
+					pnode.next_map[paths[i].GetElement(j)].parent=pnode;
 				}
 				pnode=pnode.next_map[paths[i].GetElement(j)];
 				if(j==paths[i].length()-1)

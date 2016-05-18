@@ -7,12 +7,15 @@ import wzy.model.RandomWalkModel;
 import wzy.model.TransE;
 import wzy.model.para.SpecificParameter;
 import wzy.model.randwk.DFSAllPath;
+import wzy.model.randwk.RandomAttention;
 import wzy.model.randwk.RandomExactly;
 
 public class RandomWalkProcess implements Callable{
 
 	public String dir;
-	public static int cand_size=500;
+	public static int cand_size=100;
+	public static int modelindex=0;
+	public static int teststate=1;
 	
 	public void Processing()
 	{
@@ -27,7 +30,25 @@ public class RandomWalkProcess implements Callable{
 		kbc.StatisticTrainingSet();
 		
 		//RandomWalkModel rw=new RandomExactly();
-		RandomWalkModel rw=new DFSAllPath();
+		//RandomWalkModel rw=new DFSAllPath();
+		
+		RandomWalkModel rw=null;
+		switch(modelindex)
+		{
+		case 0:{
+			rw=new DFSAllPath();
+			break;
+		}
+		case 1:{
+			rw=new RandomExactly();
+			break;
+		}
+		case 2:{
+			rw=new RandomAttention();
+			break;
+		}
+		}
+		
 		rw.train_triplets=kbc.getTrain_triplets();
 		rw.validate_triplets=kbc.getValidate_triplets();
 		rw.test_triplets=kbc.getTest_triplets();
@@ -53,16 +74,18 @@ public class RandomWalkProcess implements Callable{
 		System.err.println("Training data "+rw.train_true_count+" "+rw.train_false_count+" "
 				+(rw.train_true_count/(double)rw.train_false_count)+" "+rw.train_triplets.length);	
 		
+		rw.PrintPathsWeight(dir+"path.weight");
+		rw.PrintTopWeightFormula(dir+"path.weight.top_l1", 10, dir+"relation2id.txt");
+		
 		rw.TestCandidatesForRel(dir+"split_candidates", cand_size, "\t");
 		
 		System.err.println("Training data "+rw.train_true_count+" "+rw.train_false_count/998+" "
 				+(rw.train_true_count/((double)rw.train_false_count)/998));		
 		
 		rw.test_triplets=kbc.getTest_triplets();
-		rw.TestAllCandidates(dir+"cand.txt", cand_size);
+		rw.TestAllCandidates(dir+"cand.txt", cand_size,teststate,System.out);
 		
-		rw.PrintPathsWeight(dir+"path.weight");
-		rw.PrintTopWeightFormula(dir+"path.weight.top_l1", 10, dir+"relation2id.txt");
+
 	}
 	
 	

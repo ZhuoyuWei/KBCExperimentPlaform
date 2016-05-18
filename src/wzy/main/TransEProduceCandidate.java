@@ -57,8 +57,8 @@ public class TransEProduceCandidate {
 		//String dir="F:\\emnlp2015\\fb15k\\FB15k\\";
 		//String dir="F:\\Workspace\\KBCworkspace\\dataset\\" +
 			//	"wordnet-mlj12\\wordnet-mlj12\\";		
-		//String dir=args[0];
-		String dir="C:\\Users\\Administrator\\Documents\\data\\fb15k\\";
+		String dir=args[0];
+		//String dir="C:\\Users\\Administrator\\Documents\\data\\fb15k\\";
 		
 		//Read Three DB Files
 		KBCProcess kbc_raw_tester=new KBCProcess();
@@ -78,7 +78,7 @@ public class TransEProduceCandidate {
 		//kbc_raw_tester.setPrint_model_file(dir+args[1]);
 		kbc_raw_tester.setEmbedding_init_file(dir+args[1]);
 		//kbc_raw_tester.setPath_structure_file(dir+args[2]);
-		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(50,50));
+		kbc_raw_tester.SetEmbeddingModelSpecificParameter(SetTransEParameter(100,100));
 		
 		
 		kbc_raw_tester.getEm().SetBestParameter();
@@ -88,7 +88,7 @@ public class TransEProduceCandidate {
 		kbc_raw_tester.Processing();
 		
 		kbc_raw_tester.getEm().ProduceCandidateForRandomWalk(dir+args[2]
-				, kbc_raw_tester.getTest_triplets(),500);
+				, kbc_raw_tester.getTest_triplets(),Integer.parseInt(args[3]),Integer.parseInt(args[4]));
 		
 		
 	}

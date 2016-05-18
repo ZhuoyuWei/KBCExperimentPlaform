@@ -339,4 +339,18 @@ public class TransE extends EmbeddingModel {
 		return MatrixTool.VectorNorm2(s);
 	}
 	
+	@Override
+	public EmbeddingModel CopySeft()
+	{
+		TransE new_em=new TransE();
+		new_em.entityNum=this.entityNum;
+		new_em.relationNum=this.relationNum;
+		new_em.entity_dim=this.entity_dim;
+		new_em.relation_dim=this.relation_dim;
+		new_em.entityEmbedding=MatrixTool.CopyMatrix(this.entityEmbedding);
+		new_em.relationEmbedding=MatrixTool.CopyMatrix(this.relationEmbedding);
+		new_em.SetBestParameter();
+		return new_em;
+	}
+	
 }

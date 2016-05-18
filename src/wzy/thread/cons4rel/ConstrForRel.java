@@ -14,22 +14,24 @@ import java.util.concurrent.Callable;
 import wzy.meta.PathConfidence;
 import wzy.meta.PathSupport;
 import wzy.meta.RPath;
+import wzy.meta.TripletHash;
 
 public class ConstrForRel implements Callable{
 
 	protected int relation;
 	protected Map<RPath,Integer> path2Count=new HashMap<RPath,Integer>();
-	protected Map<RPath,int[]> path2Conf=new HashMap<RPath,int[]>();	
+	protected Map<RPath,double[]> path2Conf=new HashMap<RPath,double[]>();	
 	private Random rand=new Random();
 	protected Map<Integer,Set<Integer>> checkmap;
 	protected Integer[] candfalselist;	
 	protected int[][] train_triplets;
 	
 	protected static int[][][] triplet_graph;
+	protected static Set<TripletHash> trainTripletSet;
 	protected static int maxPathNum=100;
 	protected static int maxLength;
 	protected static int minLength;
-	protected static int false_triplet=1000;	
+	protected static int false_triplet=0;	
 	protected static boolean queit=false;
 	protected static int support_threthold=10;
 	protected static double confidence_threthold=0.8;
@@ -133,8 +135,8 @@ public class ConstrForRel implements Callable{
 	{
 		//if(relation!=16)
 			//return null;
-		if(false_triplet<=0)
-			Processing();
+		//if(false_triplet<=0)
+			//Processing();
 		//build a little graph for relation
 		BuildRelGraph();
 		//travel all, you can also sampling several ones.
@@ -156,7 +158,7 @@ public class ConstrForRel implements Callable{
 		{
 			Map.Entry entry=(Map.Entry)it.next();
 			RPath rpath=(RPath)entry.getKey();
-			int[] counts=(int[])entry.getValue();
+			double[] counts=(double[])entry.getValue();
 			
 			//if the rpath = relation, continue
 			if(rpath.length()==1&&rpath.GetElement(0)==relation)
@@ -206,6 +208,17 @@ public class ConstrForRel implements Callable{
 					+"s, and get "+rpathLists[relation].size()+"/"+path2Count.size()+" paths.");
 		}
 		return psList;
+	}
+	
+	public static void BuildTripletHashSet(int[][] train_triplets)
+	{
+		trainTripletSet=new HashSet<TripletHash>();
+		for(int i=0;i<train_triplets.length;i++)
+		{
+			TripletHash th=new TripletHash();
+			th.setTriplet(train_triplets[i]);
+			trainTripletSet.add(th);
+		}
 	}
 
 	public int getRelation() {

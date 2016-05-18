@@ -15,6 +15,7 @@ import wzy.meta.PathSupport;
 import wzy.thread.cons4rel.BFS2Direct;
 import wzy.thread.cons4rel.BFSearch;
 import wzy.thread.cons4rel.ConstrForRel;
+import wzy.thread.cons4rel.DFSNoFalseSearch;
 import wzy.thread.cons4rel.DFSearch;
 
 public class ConstructFormulas implements Callable{
@@ -141,7 +142,13 @@ public class ConstructFormulas implements Callable{
 			{
 				cfr=new DFSearch();
 				break;
-			}			
+			}	
+			case 2:
+			{
+				cfr=new DFSNoFalseSearch();
+				ConstrForRel.BuildTripletHashSet(train_triplets);
+				break;
+			}
 			}
 			cfr.setRelation(i);	
 			cfr.setTrain_triplets(relationTriplets[i]);

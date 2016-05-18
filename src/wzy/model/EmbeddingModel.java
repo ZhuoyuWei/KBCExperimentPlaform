@@ -748,7 +748,7 @@ public class EmbeddingModel {
 		}
 
 	}
-	public void ProduceCandidateForRandomWalk(String filename,int[][] test_triplets,int candidate_size)
+	public void ProduceCandidateForRandomWalk(String filename,int[][] test_triplets,int candidate_size,int state)
 	{
 		PreTesting(test_triplets);
 
@@ -763,7 +763,7 @@ public class EmbeddingModel {
 		long start=System.currentTimeMillis();
 		for(int i=0;i<test_triplets.length;i++)
 		{
-			for(int k=0;k<2;k++)
+			for(int k=0;k<state;k++)
 			{
 				int[] falsetriplet;
 				int rawcount=1;
@@ -1084,6 +1084,35 @@ public class EmbeddingModel {
 		this.print_log_file = print_log_file;
 	}
 
+	//public some protected or private methods 
+	//for other model provides gradients but need to use EmbeddingModel's Updating Embeddings
+	public List<Object> ListingEmbedding_public()
+	{
+		return ListingEmbedding();
+	}
+	public List<Object> ListingGradient_public()
+	{
+		return ListingGradient();
+	}
+	public void UpgradeGradients_public(List<Object> embeddingList,List<Object> gradientList)
+	{
+		UpgradeGradients(embeddingList,gradientList);
+	}
+	public void InitGradients_public()
+	{
+		InitGradients();
+	}
+	public void BallProjecting_public(List<Object> embeddingList)
+	{
+		BallProjecting(embeddingList);
+	}
+	
+	public EmbeddingModel CopySeft()
+	{
+		//EmbeddingModel new_em=this.getClass().newInstance();
+		return null;
+	}
+	
 	
 
 }

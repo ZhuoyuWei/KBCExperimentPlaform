@@ -28,7 +28,7 @@ public class MiningFomrulaStructures {
 		cf.setMaxLength(Integer.parseInt(args[1])); //max path length:2 can run over, 3 is hard.
 		//cf.setMaxLength(4);
 		cf.setSearch_method(1); //DFS
-		cf.setThreNum(16);
+		cf.setThreNum(128);
 		cf.setPrintsupport(true);
 		cf.setFormulaPrintFile(dir+"formulas");
 		ConstrForRel.setFalse_triplet(Integer.parseInt(args[2]));

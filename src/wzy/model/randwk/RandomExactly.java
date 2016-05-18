@@ -10,7 +10,7 @@ import wzy.model.RandomWalkModel;
 
 public class RandomExactly extends RandomWalkModel {
 	
-	public int max_round=100;
+	public int max_round=10;
 	public double restart_rate=0.3;
 	public double back_rate=0.5;
 	public Random rand=new Random();
