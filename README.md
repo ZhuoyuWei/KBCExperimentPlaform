@@ -31,3 +31,7 @@ Without paths:
 Random Walk Exactly:
 
 0.8112	0.2024	35.8848	0.9370	0.774	22.0374
+
+Random Attention, only by relation but not entity:
+
+0.8077	0.2038	35.8445	0.9335	0.782	21.8128	
