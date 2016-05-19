@@ -347,10 +347,27 @@ public class TransE extends EmbeddingModel {
 		new_em.relationNum=this.relationNum;
 		new_em.entity_dim=this.entity_dim;
 		new_em.relation_dim=this.relation_dim;
-		new_em.entityEmbedding=MatrixTool.CopyMatrix(this.entityEmbedding);
-		new_em.relationEmbedding=MatrixTool.CopyMatrix(this.relationEmbedding);
+		new_em.setEntityEmbedding(MatrixTool.CopyMatrix(this.entityEmbedding));
+		new_em.setRelationEmbedding(MatrixTool.CopyMatrix(this.relationEmbedding));
 		new_em.SetBestParameter();
 		return new_em;
 	}
+
+	public double[][] getEntityEmbedding() {
+		return entityEmbedding;
+	}
+
+	public void setEntityEmbedding(double[][] entityEmbedding) {
+		this.entityEmbedding = entityEmbedding;
+	}
+
+	public double[][] getRelationEmbedding() {
+		return relationEmbedding;
+	}
+
+	public void setRelationEmbedding(double[][] relationEmbedding) {
+		this.relationEmbedding = relationEmbedding;
+	}
+	
 	
 }

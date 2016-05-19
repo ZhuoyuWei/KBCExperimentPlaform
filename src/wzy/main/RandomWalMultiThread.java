@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import wzy.model.EmbeddingModel;
 import wzy.model.RandomWalkModel;
 import wzy.model.TransE;
 import wzy.model.randwk.DFSAllPath;
@@ -69,9 +70,11 @@ public class RandomWalMultiThread {
 		int[][][] splited_valid_triplets=SplitData(kbc.getValidate_triplets());
 		int[][][] splited_test_triplets=SplitData(kbc.getTest_triplets());
 		
-		//int modelindex=Integer.parseInt(args[1]);
-		int modelindex=2;		
-		kbc.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(50,50));
+		int modelindex=Integer.parseInt(args[1]);
+		int emb_dim=Integer.parseInt(args[2]);
+		//RandomWalkProcess.cand_size=Integer.parseInt(args[2]);
+		//int modelindex=2;		
+		kbc.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(emb_dim,emb_dim));
 		kbc.getEm().InitEmbeddingFromFile(dir+"emb");
 		
 		ConstructFormulas cc=new ConstructFormulas();
@@ -108,7 +111,7 @@ public class RandomWalMultiThread {
 		}
 		System.exit(-1);*/
 
-		
+		EmbeddingModel tmpem=kbc.getEm().CopySeft();
 		for(int i=0;i<relNum;i++)
 		{
 			RandomWalkModel rw=null;
@@ -126,7 +129,8 @@ public class RandomWalMultiThread {
 			}
 			case 2:{
 				RandomAttention ra=new RandomAttention();
-				ra.DeepCopyEM(kbc.getEm());
+				//ra.DeepCopyEM(kbc.getEm());
+				ra.ShallowCopyEm(tmpem);
 				ra.ShallowCopyEmbedding(ra.em_randwalk.ListingEmbedding_public());
 				ra.em_randwalk.setGamma(0.1);
 				rw=ra;

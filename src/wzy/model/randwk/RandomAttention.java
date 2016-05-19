@@ -57,6 +57,15 @@ public class RandomAttention extends RandomWalkModel{
 		relationEmbGradients=new double[relationEmbeddings.length][relationEmbeddings[0].length];
 	}
 	
+	private boolean ShouldUpdate(double[] paths)
+	{
+		int count=0;
+		for(int i=0;i<paths.length-1;i++)
+			if(paths[i]>0)
+				count++;
+		return count>0;
+	}
+	
 	@Override
 	public void OneBranchTraining(int[][] train_triplets,int sindex,int eindex)
 	{
@@ -68,6 +77,8 @@ public class RandomAttention extends RandomWalkModel{
 		for(int i=sindex;i<=eindex;i++)
 		{			
 			double[] true_paths_count=RandomWalk(train_triplets[i]);
+			if(!ShouldUpdate(true_paths_count))
+				continue;
 			train_true_count+=CheckRandomRes(true_paths_count);
 			double true_f_wx=Logistic_F_wx(train_triplets[i][1],true_paths_count);
 			Logistic_Grident(train_triplets[i][1],true_paths_count,true_f_wx-1);
@@ -81,6 +92,8 @@ public class RandomAttention extends RandomWalkModel{
 			{
 				int[] false_triplet=GenerateFalseTriplet(train_triplets[i]);
 				double[] false_paths_count=RandomWalk(false_triplet);
+				if(!ShouldUpdate(false_paths_count))
+					continue;
 				train_false_count+=CheckRandomRes(false_paths_count);
 				double false_f_wx=Logistic_F_wx(false_triplet[1],false_paths_count);
 				Logistic_Grident(false_triplet[1],false_paths_count,false_f_wx);
@@ -169,8 +182,10 @@ public class RandomAttention extends RandomWalkModel{
 	
 	public void CalculatePathEmbeddinigGradients(double[] fcount,int rel,int tentity,int label)
 	{
+		
 		if(rpathLists==null||rpathLists[rel]==null)
 			return;
+		global_update_count++;
 		for(int i=0;i<rpathLists[rel].length;i++)
 		{
 			if(fcount[i]>1e-4)
@@ -505,7 +520,16 @@ public class RandomAttention extends RandomWalkModel{
 		em_randwalk=source;
 	}
 	
-	
+	private int CheckGradientsNot0(double[][] gradients)
+	{
+		int count=0;
+		for(int i=0;i<gradients.length;i++)
+		{
+			if(Math.abs(gradients[i][0])>1e-4)
+				count++;
+		}
+		return count;
+	}
 	@Override
 	public void UpdateWeights()
 	{
@@ -522,10 +546,23 @@ public class RandomAttention extends RandomWalkModel{
 		
 		//use embedding
 		List<Object> tmpGradientList=new ArrayList<Object>();
+		
 		tmpGradientList.add(entityEmbGradients);
+		//if(isdebuging)
+			//System.out.println(CheckGradientsNot0(entityEmbGradients));
 		tmpGradientList.add(relationEmbGradients);
+		//if(isdebuging)		
+			//System.out.println(CheckGradientsNot0(relationEmbGradients));
+
+		/*List<Object> tmp=new ArrayList<Object>();
+		tmp.add(em_randwalk.ListingEmbedding_public().get(0));
+		tmp.add(em_randwalk.ListingEmbedding_public().get(1));	
+		tmp.add(em_randwalk.ListingEmbedding_public().get(0));		*/
+		
 		em_randwalk.UpgradeGradients_public(em_randwalk.ListingEmbedding_public(), tmpGradientList);
 		
+		
+		//this.CompareDiff(em.ListingEmbedding_public(), em_randwalk.ListingEmbedding_public());
 		
 		//norm l1 ball projecting
 		if(project)
@@ -562,5 +599,7 @@ public class RandomAttention extends RandomWalkModel{
 		}
 		
 	}	
+	
+
 	
 }

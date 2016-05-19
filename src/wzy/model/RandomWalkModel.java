@@ -19,6 +19,7 @@ import wzy.io.busi.ReadTriplets;
 import wzy.meta.FormulaForest;
 import wzy.meta.RPath;
 import wzy.meta.TripletHash;
+import wzy.model.randwk.RandomAttention;
 import wzy.thread.RandomWalkProcess;
 import wzy.tool.MatrixTool;
 
@@ -66,9 +67,13 @@ public class RandomWalkModel implements Callable{
 	//debug
 	public int train_true_count=0;
 	public int train_false_count=0;
+	public int global_update_count=0;
+	public static boolean isdebuging=true;
 	
 	//multiThreads
 	public String rel_dir;
+	
+	
 	
 	
 	public void InitPathWeights()
@@ -138,7 +143,9 @@ public class RandomWalkModel implements Callable{
 		{
 			//Disrupt the order of training data set
 			
-			if(epoch==2)
+			global_update_count=0;
+			
+			if(epoch==3)
 			{
 				System.out.println(epoch);
 			}
@@ -174,8 +181,14 @@ public class RandomWalkModel implements Callable{
 			}
 			else
 			{
-				System.err.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s");
+				System.err.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s "+global_update_count);
 			}
+			
+			/*if(isdebuging&&this instanceof RandomAttention)
+			{
+				RandomAttention ra=(RandomAttention)this;
+				CompareDiff(ra.em_randwalk.ListingEmbedding_public(),ra.em.ListingEmbedding_public());
+			}*/
 			
 		}
 	}
@@ -665,7 +678,34 @@ public class RandomWalkModel implements Callable{
 		return null;
 	}
 	
-
+	//debug
+	public static void CompareDiff(List<Object> a,List<Object> b)
+	{
+		for(int i=0;i<a.size();i++)
+		{
+			double[][] s=(double[][])a.get(i);
+			double[][] t=(double[][])b.get(i);
+			if(s==t)
+			{
+				System.out.println("error");
+			}
+			int count=0;
+			for(int j=0;j<s.length;j++)
+			{
+				boolean flag=true;
+				for(int k=0;k<s[j].length;k++)
+					if(Math.abs(s[j][k]-t[j][k])>1e-4)
+					{
+						//count++;
+						flag=false;
+						break;
+					}
+				if(!flag)
+					count++;
+			}
+			System.out.println("Diff emb: "+count);
+		}
+	}
 	 
 	
 }
