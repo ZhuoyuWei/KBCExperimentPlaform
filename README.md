@@ -35,3 +35,9 @@ Random Walk Exactly:
 Random Attention, only by relation but not entity:
 
 0.8077	0.2038	35.8445	0.9335	0.782	21.8128	
+
+把Attention用作weight，如果不再用原来的weight，则结果为：0.715   0.1634  55.6153 0.8055  0.538   41.3667
+
+如果继续乘以原来的weight，则结果为： 0.7491  0.1617  40.1713 0.8486  0.5922  25.8979
+
+以上是10轮的训练结果，看看加大轮数会不会有提升
