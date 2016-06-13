@@ -40,7 +40,7 @@ public class RandomPrior extends RandomWalkModel{
 	}
 	
 	@Override
-	public double[] RandomWalk(int[] triplet)
+	public double[] RandomWalk(int[] triplet,boolean training)
 	{
 		double[] fcounts=new double[pathWeights[triplet[1]].length];
 		

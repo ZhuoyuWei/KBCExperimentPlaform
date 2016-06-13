@@ -179,6 +179,11 @@ public class FileTools {
         }  
         dir.mkdir();  
     }  
+	public static boolean Exists(String filename)
+	{
+		File file=new File(filename);
+		return file.exists();
+	}
 	
 	public static boolean ReadEmbeddingsFromFile(String filename,List<Object> embeddingList)
 	{
@@ -519,6 +524,8 @@ public class FileTools {
 		return res;
 	}
 	
+	
+
 	
 	
 }

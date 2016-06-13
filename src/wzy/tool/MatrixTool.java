@@ -147,4 +147,32 @@ public class MatrixTool {
 	}
 	
 
+	public static double Vector_StandardVar(double[] v)
+	{
+		double sum=0;
+		double sum2=0;
+		for(int i=0;i<v.length;i++)
+		{
+			sum+=v[i];
+			sum2+=v[i]*v[i];
+		}
+		sum/=v.length;
+		sum2/=v.length;
+		//return Math.sqrt(sum2-sum*sum)/1000000;
+		return sum2-sum*sum;
+	}
+	
+	public static double[][] MatrixSubtraction(double[][] a, double[][] b)
+	{
+		double[][] res=new double[a.length][];
+		for(int i=0;i<a.length;i++)
+		{
+			res[i]=new double[a[i].length];
+			for(int j=0;j<a[i].length;j++)
+			{
+				res[i][j]=a[i][j]-b[i][j];
+			}
+		}
+		return res;
+	}
 }

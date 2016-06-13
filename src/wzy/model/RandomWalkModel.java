@@ -26,6 +26,7 @@ import wzy.tool.MatrixTool;
 public class RandomWalkModel implements Callable{
 
 	public int singlerel;
+	public int max_round=10;
 	public static int[][] relation_trans_matrix=null;
 	public static int entityNum=0;
 	public static int relationNum=0;
@@ -39,7 +40,7 @@ public class RandomWalkModel implements Callable{
 	public double[][] pathWeights;
 	public double[][] pathWeightGradients;
 	
-	protected int Epoch=10;
+	protected int Epoch=100;
 	protected int minibranchsize=4800;
 	protected double gamma=0.01;
 	protected double margin=1.;
@@ -53,10 +54,10 @@ public class RandomWalkModel implements Callable{
 	
 	public boolean l2_flag=false;
 	public boolean project=true;
-	public static boolean emb_force_1=true;
+	public static boolean emb_force_1=false;
 	public double l2_C=1;
-	public double learning_rate=0.01;
-	public int false_triplet_size=1;
+	public double learning_rate=0.0001;
+	public int false_triplet_size=0;
 	
 	public static int[][][] triplet_graph;
 	public boolean nocount=true;
@@ -66,12 +67,14 @@ public class RandomWalkModel implements Callable{
 	
 	//debug
 	public int train_true_count=0;
+	public double train_standard_vars=0;
 	public int train_false_count=0;
 	public int global_update_count=0;
 	public static boolean isdebuging=true;
 	
 	//multiThreads
 	public String rel_dir;
+	public PrintStream ps=null;
 	
 	
 	
@@ -94,7 +97,7 @@ public class RandomWalkModel implements Callable{
 				//pathWeights[i][j]=rand.nextDouble();
 				
 				//init for transE
-				pathWeights[i][j]=0.1;
+				pathWeights[i][j]=0.;
 				if(j==pathWeights[i].length-1)
 					pathWeights[i][j]=1;
 			}
@@ -119,19 +122,32 @@ public class RandomWalkModel implements Callable{
 			relation_trans_matrix=FileTools.ReadFormulas_RelationMatrix(filename, relationNum);
 			rpathLists=FileTools.ReadFormulasForRelations(filename, relationNum);
 			ff=new FormulaForest[relationNum];
-			for(int i=0;i<relationNum;i++)
+			//for(int i=0;i<relationNum;i++)
+			for(int i=0;i<10;i++)				
 			{
 				ff[i]=new FormulaForest();
 				ff[i].BuildForest(rpathLists[i], relationNum);
 			}
 		}
 	}
+	public static void ReadFormulasNoBuildTree(String filename)
+	{
+		if(relationNum>0)
+		{
+			relation_trans_matrix=FileTools.ReadFormulas_RelationMatrix(filename, relationNum);
+			rpathLists=FileTools.ReadFormulasForRelations(filename, relationNum);
+		}
+	}	
 	
+	
+	protected boolean debug_print_once=false;
 	public void Training(int[][] train_triplets,int[][] validate_triplets)
 	{
 		if(this.filteringSet==null)
 			BuildTrainAndValidTripletSet(train_triplets,test_triplets);
 		int branch=train_triplets.length/minibranchsize;
+		if(train_triplets.length%minibranchsize!=0)
+			branch++;
 		
 		//if(train_triplets.length%minibranchsize>0) //if the size of minibranch didn't touch minibranch size
 			//branch++;
@@ -142,19 +158,22 @@ public class RandomWalkModel implements Callable{
 		for(int epoch=0;epoch<Epoch;epoch++)
 		{
 			//Disrupt the order of training data set
-			
 			global_update_count=0;
 			
-			if(epoch==3)
+			/*if(epoch==3)
 			{
 				System.out.println(epoch);
-			}
-			
+			}*/
+			//debug_print_once=true;
 			long start=System.currentTimeMillis();
 			for(int i=0;i<random_data_each_epoch;i++)
 			{
-				int a=Math.abs(rand.nextInt())%train_triplets.length;
-				int b=Math.abs(rand.nextInt())%train_triplets.length;	
+				//int a=Math.abs(rand.nextInt())%train_triplets.length;
+				//int b=Math.abs(rand.nextInt())%train_triplets.length;	
+				
+				int a=rand.nextInt(train_triplets.length);
+				int b=rand.nextInt(train_triplets.length);
+				
 				int[] t=train_triplets[a];
 				train_triplets[a]=train_triplets[b];
 				train_triplets[b]=t;
@@ -163,6 +182,7 @@ public class RandomWalkModel implements Callable{
 			//wzy debug 5.6
 			train_true_count=0;
 			train_false_count=0;
+			train_standard_vars=0;
 			
 			for(int i=0;i<branch;i++)
 			{
@@ -174,6 +194,8 @@ public class RandomWalkModel implements Callable{
 				OneBranchTraining(train_triplets,sindex,eindex);	
 				//InitPathWeights();
 			}
+			
+			
 			long end=System.currentTimeMillis();
 			if(trainprintable)
 			{
@@ -181,7 +203,9 @@ public class RandomWalkModel implements Callable{
 			}
 			else
 			{
-				System.err.println("Epoch "+epoch+" is end at "+(end-start)/1000+"s "+global_update_count);
+				System.err.println(this.singlerel+" Epoch "+epoch+" is end at "+(end-start)/1000+"s "
+						+train_true_count+"\t"+train_standard_vars);
+				ps.println(this.singlerel+" Epoch "+epoch+" is end at "+(end-start)/1000+"s "+train_true_count);
 			}
 			
 			/*if(isdebuging&&this instanceof RandomAttention)
@@ -223,12 +247,18 @@ public class RandomWalkModel implements Callable{
 		if(rand.nextDouble()<pr)
 		{
 			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[2]<0)
-				falseTri.getTriplet()[2]=(Math.abs(rand.nextInt()))%entityNum;
+			{
+				//falseTri.getTriplet()[2]=(Math.abs(rand.nextInt()))%entityNum;
+				falseTri.getTriplet()[2]=rand.nextInt(entityNum);
+			}
 		}
 		else
 		{
 			while(filteringSet.contains(falseTri)||falseTri.getTriplet()[0]<0)
-				falseTri.getTriplet()[0]=(Math.abs(rand.nextInt()))%entityNum;			
+			{
+				//falseTri.getTriplet()[0]=(Math.abs(rand.nextInt()))%entityNum;	
+				falseTri.getTriplet()[0]=rand.nextInt(entityNum);				
+			}
 		}
 		return falseTri.getTriplet();
 	}
@@ -295,7 +325,7 @@ public class RandomWalkModel implements Callable{
 		for(int i=0;i<test_cans.length;i++)
 		{
 			int[] triplet=test_triplets[i];
-			double[] fcounts=RandomWalk(triplet);
+			double[] fcounts=RandomWalk(triplet,false);
 			train_true_count+=CheckRandomRes(fcounts);
 			/*if(train_true_count>0)
 			{
@@ -341,7 +371,7 @@ public class RandomWalkModel implements Callable{
 						can_tri[0]=test_cans[i][j][k];						
 					}
 					
-					fcounts=RandomWalk(can_tri);
+					fcounts=RandomWalk(can_tri,false);
 					train_false_count+=CheckRandomRes(fcounts);
 					double score=Logistic_F_wx(can_tri[1],fcounts);
 					if(ans_score<=score)
@@ -489,7 +519,7 @@ public class RandomWalkModel implements Callable{
 		InitGradients();
 		for(int i=sindex;i<=eindex;i++)
 		{			
-			double[] true_paths_count=RandomWalk(train_triplets[i]);
+			double[] true_paths_count=RandomWalk(train_triplets[i],true);
 			train_true_count+=CheckRandomRes(true_paths_count);
 			double true_f_wx=Logistic_F_wx(train_triplets[i][1],true_paths_count);
 			Logistic_Grident(train_triplets[i][1],true_paths_count,true_f_wx-1);
@@ -497,7 +527,7 @@ public class RandomWalkModel implements Callable{
 			for(int j=0;j<false_triplet_size;j++)
 			{
 				int[] false_triplet=GenerateFalseTriplet(train_triplets[i]);
-				double[] false_paths_count=RandomWalk(false_triplet);
+				double[] false_paths_count=RandomWalk(false_triplet,true);
 				train_false_count+=CheckRandomRes(false_paths_count);
 				double false_f_wx=Logistic_F_wx(false_triplet[1],false_paths_count);
 				Logistic_Grident(false_triplet[1],false_paths_count,false_f_wx);
@@ -552,7 +582,7 @@ public class RandomWalkModel implements Callable{
 				}
 				if(emb_force_1) // 
 				{
-					pathWeights[i][pathWeights[i].length-1]=1.;
+					pathWeights[i][pathWeights[i].length-1]=0.5;
 				}
 			}					
 		}
@@ -603,7 +633,7 @@ public class RandomWalkModel implements Callable{
 		}
 	}
 	
-	public double[] RandomWalk(int[] triplet)
+	public double[] RandomWalk(int[] triplet,boolean training)
 	{
 		double[] fcounts=null;
 		if(pathWeights!=null&&pathWeights[0]!=null)
@@ -611,7 +641,12 @@ public class RandomWalkModel implements Callable{
 		else
 			fcounts=new double[1];
 		if(em!=null)
-			fcounts[fcounts.length-1]=-em.CalculateSimilarity(triplet);
+		{	
+			//fcounts[fcounts.length-1]=1./Math.exp(em.CalculateSimilarity(triplet));			
+			//fcounts[fcounts.length-1]=Math.exp(-em.CalculateSimilarity(triplet));
+			//fcounts[fcounts.length-1]=-em.CalculateSimilarity(triplet);
+			fcounts[fcounts.length-1]=1./em.CalculateSimilarity(triplet);
+		}
 		else
 			fcounts[fcounts.length-1]=1;			
 		return fcounts;
@@ -629,8 +664,9 @@ public class RandomWalkModel implements Callable{
 		int sum=0;
 		for(int i=0;i<res.length-1;i++)
 		{
-			if(res[i]>1e-6)
-				sum+=1;
+			if(res[i]>0.5)
+				sum+=(int)res[i];
+			//sum+=(int)res[i];
 		}
 		//return sum;
 		if(sum>0)
@@ -643,9 +679,10 @@ public class RandomWalkModel implements Callable{
 	{
 		InitPathWeights();
 		
-		PrintStream ps=null;
+		
 		try {
 			ps=new PrintStream(rel_dir+singlerel+"log");
+			//ps=new PrintStream("tmp62");
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -661,21 +698,12 @@ public class RandomWalkModel implements Callable{
 		ps.println("Training data "+train_true_count+" "+train_false_count/998+" "
 				+(train_true_count/((double)train_false_count)/998));		
 
-		
-	}
-	@Override
-	public Object call() throws Exception {
-		// TODO Auto-generated method stub
-		try
+		ps.close();
+		if(this instanceof RandomAttention)
 		{
-			Processing();
-		}catch(Exception e)
-		{
-			e.printStackTrace();
+			((RandomAttention)this).em_randwalk=null;
 		}
 		
-		
-		return null;
 	}
 	
 	//debug
@@ -706,6 +734,36 @@ public class RandomWalkModel implements Callable{
 			System.out.println("Diff emb: "+count);
 		}
 	}
+	
+	
+	
+	
+	public int getEpoch() {
+		return Epoch;
+	}
+	public void setEpoch(int epoch) {
+		Epoch = epoch;
+	}
+	
+	
+	
+	
+	@Override
+	public Object call() throws Exception {
+		// TODO Auto-generated method stub
+		try
+		{
+			Processing();
+		}catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		
+		return null;
+	}
+	
+
 	 
 	
 }

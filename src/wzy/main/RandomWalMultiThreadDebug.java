@@ -21,7 +21,7 @@ import wzy.thread.KBCProcess;
 import wzy.thread.RandomWalkProcess;
 import wzy.tool.MatrixTool;
 
-public class RandomWalMultiThread {
+public class RandomWalMultiThreadDebug {
 
 	public static int relNum;
 	public static int entNum;
@@ -50,9 +50,9 @@ public class RandomWalMultiThread {
 	
 	public static void main(String[] args)
 	{
-		System.out.println("Change localation");
-		String dir=args[0];
-		//String dir="C:\\Users\\Administrator\\Documents\\data\\wn18_doubledirect\\";
+		System.out.println("Finally");
+		//String dir=args[0];
+		String dir="C:\\Users\\Administrator\\Documents\\data\\fb15k_doubledirect\\";
 		KBCProcess kbc=new KBCProcess();
 		kbc.SetThreeTriplets(dir+"exp_train.txt"
 				, dir+"exp_valid.txt"
@@ -73,11 +73,11 @@ public class RandomWalMultiThread {
 		int[][][] splited_valid_triplets=SplitData(kbc.getValidate_triplets());
 		int[][][] splited_test_triplets=SplitData(kbc.getTest_triplets());
 		
-		int modelindex=Integer.parseInt(args[1]);
-		int emb_dim=Integer.parseInt(args[2]);
+		//int modelindex=Integer.parseInt(args[1]);
+		//int emb_dim=Integer.parseInt(args[2]);
 		//RandomWalkProcess.cand_size=Integer.parseInt(args[2]);
-		//int modelindex=2;
-		//int emb_dim=50;
+		int modelindex=3;
+		int emb_dim=50;
 		kbc.SetEmbeddingModelSpecificParameter(LinkPrediction.SetTransEParameter(emb_dim,emb_dim));
 		kbc.getEm().InitEmbeddingFromFile(dir+"emb");
 		
@@ -89,13 +89,13 @@ public class RandomWalMultiThread {
 		cc.BuildGraph();
 		RandomWalkModel.triplet_graph=cc.getTriplet_graph();
 		
-		ExecutorService exec = Executors.newFixedThreadPool(36); 
-		//ExecutorService exec = Executors.newFixedThreadPool(1); 		
+		//ExecutorService exec = Executors.newFixedThreadPool(36); 
+		ExecutorService exec = Executors.newFixedThreadPool(1); 		
 		List<Callable<Integer>> alThreads=new ArrayList<Callable<Integer>>();
 		
 		RandomWalkProcess.teststate=1;
-		RandomWalkProcess.cand_size=Integer.parseInt(args[5]);
-		//RandomWalkProcess.cand_size=500;
+		//RandomWalkProcess.cand_size=Integer.parseInt(args[5]);
+		RandomWalkProcess.cand_size=500;
 		
 		//debug, select a suitable sim function
 		/*double[][] relEmb=(double[][])(kbc.getEm().ListingEmbedding_public().get(1));
@@ -118,10 +118,12 @@ public class RandomWalMultiThread {
 		System.exit(-1);*/
 
 		EmbeddingModel tmpem=kbc.getEm().CopySeft();
-		for(int i=0;i<relNum;i++)
+		//for(int i=0;i<relNum;i++)
+		for(int i=0;i<1;i++)
 		{
-			if(!FileTools.Exists(dir+"split_candidates/1/"+i))
-				continue;
+			//if(!FileTools.Exists(dir+"split_candidates/1/"+i))
+				//continue;
+			
 			RandomWalkModel rw=null;
 			switch(modelindex)
 			{
@@ -148,13 +150,15 @@ public class RandomWalMultiThread {
 			case 3:{
 				rw=new RandomPRA();
 				RandomPRA.StaticGraphForRelations(RandomWalkModel.triplet_graph);
+				break;
 			}
 			}
 			
 			
-			rw.setEpoch(Integer.parseInt(args[3]));
-			rw.max_round=Integer.parseInt(args[4]);
-			//rw.setEpoch(10);
+			//rw.setEpoch(Integer.parseInt(args[3]));
+			//rw.max_round=Integer.parseInt(args[4]);
+			rw.setEpoch(100);
+			rw.max_round=1;
 			
 			rw.train_triplets=splited_train_triplets[i];
 			rw.validate_triplets=splited_valid_triplets[i];

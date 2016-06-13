@@ -14,9 +14,9 @@ public class DFSAllPath extends RandomWalkModel{
 	private double[] fcounts;
 	
 	@Override
-	public double[] RandomWalk(int[] triplet)
+	public double[] RandomWalk(int[] triplet,boolean training)
 	{
-		fcounts=super.RandomWalk(triplet);
+		fcounts=super.RandomWalk(triplet,training);
 		
 		int state=triplet[0];
 		t=triplet[2];

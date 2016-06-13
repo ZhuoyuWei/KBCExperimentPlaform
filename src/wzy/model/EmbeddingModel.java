@@ -1102,43 +1102,7 @@ public class EmbeddingModel {
 	}
 	public void UpgradeGradients_public(List<Object> embeddingList,List<Object> gradientList)
 	{
-		/*List<Object> tmp=new ArrayList<Object>();
-		
-		double[][] rand_matrix=MatrixTool.CopyMatrix((double[][])embeddingList.get(0));
-		
-		tmp.add(rand_matrix);
-		tmp.add(MatrixTool.CopyMatrix((double[][])embeddingList.get(1)));
-		
-		double[][] tmp_entity_gradients=(double[][])gradientList.get(0);
-		int count=0;
-		for(int i=0;i<tmp_entity_gradients.length;i++)
-			for(int j=0;j<tmp_entity_gradients[i].length;j++)
-				if(Math.abs(tmp_entity_gradients[i][j])>1e-4)
-					count++;
-		System.out.println(count);*/
-		
-		//double[][] test_tmp=MatrixTool.CopyMatrix((double[][])embeddingList.get(0));
-		//double[][] 
-		
-		//double[][] redcode=new double[entityNum][50];
-		
-	
-		//double[][] smatrix=(double[][]) embeddingList.get(0);
-		
-		//System.out.println(rand_matrix[294][0]);
-		
 		UpgradeGradients(embeddingList,gradientList);
-		/*RandomWalkModel.CompareDiff(tmp, embeddingList);
-		
-		count=0;
-		for(int i=0;i<entityNum;i++)
-			for(int j=0;j<50;j++)
-				if(Math.abs(rand_matrix[i][j]-smatrix[i][j])>1e-4)
-					count++;
-		System.out.println("asdads "+count);*/
-		
-		
-		
 	}
 	public void InitGradients_public()
 	{
